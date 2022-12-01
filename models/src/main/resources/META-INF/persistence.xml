@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" version="2.1">
+    <persistence-unit name="price-updater-jpa" transaction-type="RESOURCE_LOCAL">
+        <non-jta-data-source>jdbc/PriceUpdaterDS</non-jta-data-source>
+
+        <class>mtn.rso.pricecompare.priceupdater.models.entities.ItemEntity</class>
+        <class>mtn.rso.pricecompare.priceupdater.models.entities.PriceEntity</class>
+        <class>mtn.rso.pricecompare.priceupdater.models.entities.StoreEntity</class>
+        <class>mtn.rso.pricecompare.priceupdater.models.entities.RequestEntity</class>
+        <class>mtn.rso.pricecompare.priceupdater.models.converters.InstantAtributeConverter</class>
+
+        <properties>
+            <!--Defines action upon startup: drop table and create new one-->
+            <property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
+            <!--Defines how the database schema is created: using the declared classes.-->
+            <property name="javax.persistence.schema-generation.create-source" value="metadata"/>
+            <!--Defines the location of the script which initializes the database.-->
+            <property name="javax.persistence.sql-load-script-source"
+                      value="sql-scripts/init.sql" />
+            <!--Defines how the database is dropped: using the declared classes.-->
+            <property name="javax.persistence.schema-generation.drop-source" value="metadata"/>
+        </properties>
+    </persistence-unit>
+</persistence>

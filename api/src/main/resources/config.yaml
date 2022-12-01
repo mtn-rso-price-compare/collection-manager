@@ -1,0 +1,15 @@
+kumuluzee:
+  name: price-updater-service
+  env:
+    name: dev
+  version: 1.0.0
+  server:
+    base-url: http://localhost:8080
+    http:
+      port: 8080
+  datasources:
+    - jndi-name: jdbc/PriceUpdaterDS
+      connection-url: jdbc:postgresql://host.docker.internal:5432/price-updater
+      username: dbuser
+      password: postgres
+      max-pool-size: 20

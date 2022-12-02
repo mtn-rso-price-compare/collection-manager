@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>mtn.rso.pricecompare</groupId>
-    <artifactId>price-updater</artifactId>
+    <artifactId>collection-manager</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <build>
         <plugins>
@@ -84,22 +84,22 @@
 
             <dependency>
                 <groupId>mtn.rso.pricecompare</groupId>
-                <artifactId>price-updater-api</artifactId>
+                <artifactId>collection-manager-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>mtn.rso.pricecompare</groupId>
-                <artifactId>price-updater-models</artifactId>
+                <artifactId>collection-manager-models</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>mtn.rso.pricecompare</groupId>
-                <artifactId>price-updater-services</artifactId>
+                <artifactId>collection-manager-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>mtn.rso.pricecompare</groupId>
-                <artifactId>price-updater-lib</artifactId>
+                <artifactId>collection-manager-lib</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

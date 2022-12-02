@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>price-updater</artifactId>
+        <artifactId>collection-manager</artifactId>
         <groupId>mtn.rso.pricecompare</groupId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>price-updater-services</artifactId>
+    <artifactId>collection-manager-services</artifactId>
     <build>
         <plugins>
             <plugin>
@@ -54,7 +54,7 @@
 
         <dependency>
             <groupId>mtn.rso.pricecompare</groupId>
-            <artifactId>price-updater-models</artifactId>
+            <artifactId>collection-manager-models</artifactId>
         </dependency>
 
     </dependencies>

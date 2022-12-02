@@ -3,7 +3,7 @@ package mtn.rso.pricecompare.priceupdater.services.beans;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.priceupdater.lib.Request;
-import mtn.rso.pricecompare.priceupdater.models.converters.RequestConverter;
+import mtn.rso.pricecompare.collectionmanager.models.converters.RequestConverter;
 import mtn.rso.pricecompare.priceupdater.models.entities.RequestEntity;
 
 import javax.enterprise.context.RequestScoped;

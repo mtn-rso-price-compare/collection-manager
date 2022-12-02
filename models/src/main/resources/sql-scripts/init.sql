@@ -1,4 +1,5 @@
-INSERT INTO request (status, last_updated) VALUES (0, TIMESTAMP '2022-11-26 10:45:48');
-INSERT INTO item (name) VALUES ('piščančje prsi');
+INSERT INTO collection (user_id, name) VALUES (0, 'Priljubljeni izdelki');
+INSERT INTO tag (name) VALUES ('Meso in mesni izdelki');
 INSERT INTO store (name, url) VALUES ('ENGROTUŠ d.o.o.', 'https://www.tus.si');
-INSERT INTO price (item_id, store_id, amount) VALUES ((SELECT id FROM item WHERE name='piščančje prsi'), (SELECT id FROM store WHERE name='ENGROTUŠ d.o.o.'), 3.59);
+INSERT INTO collection_item (collection_id, item_id) VALUES ((SELECT id FROM collection WHERE user_id=0 AND name='Priljubljeni izdelki'), 0);
+INSERT INTO tag_item (tag_id, item_id) VALUES ((SELECT id FROM tag WHERE name='Meso in mesni izdelki'), 0);

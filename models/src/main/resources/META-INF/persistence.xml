@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" version="2.1">
-    <persistence-unit name="price-updater-jpa" transaction-type="RESOURCE_LOCAL">
-        <non-jta-data-source>jdbc/PriceUpdaterDS</non-jta-data-source>
+    <persistence-unit name="collection-manager-jpa" transaction-type="RESOURCE_LOCAL">
+        <non-jta-data-source>jdbc/CollectionManagerDS</non-jta-data-source>
 
-        <class>mtn.rso.pricecompare.priceupdater.models.entities.ItemEntity</class>
-        <class>mtn.rso.pricecompare.priceupdater.models.entities.PriceEntity</class>
-        <class>mtn.rso.pricecompare.priceupdater.models.entities.StoreEntity</class>
-        <class>mtn.rso.pricecompare.priceupdater.models.entities.RequestEntity</class>
-        <class>mtn.rso.pricecompare.priceupdater.models.converters.InstantAtributeConverter</class>
+        <class>mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity</class>
+        <class>mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity</class>
+        <class>mtn.rso.pricecompare.collectionmanager.models.entities.TagEntity</class>
+        <class>mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity</class>
 
         <properties>
             <!--Defines action upon startup: drop table and create new one-->

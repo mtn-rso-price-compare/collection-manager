@@ -2,8 +2,8 @@ package mtn.rso.pricecompare.priceupdater.services.beans;
 
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
-import mtn.rso.pricecompare.priceupdater.lib.Item;
-import mtn.rso.pricecompare.priceupdater.models.converters.ItemConverter;
+import mtn.rso.pricecompare.collectionmanager.lib.Item;
+import mtn.rso.pricecompare.collectionmanager.models.converters.ItemConverter;
 import mtn.rso.pricecompare.priceupdater.models.entities.ItemEntity;
 
 import javax.enterprise.context.RequestScoped;

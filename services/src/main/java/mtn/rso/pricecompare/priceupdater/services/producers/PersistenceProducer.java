@@ -9,7 +9,7 @@ import javax.persistence.PersistenceUnit;
 
 public class PersistenceProducer {
 
-    @PersistenceUnit(unitName = "price-updater-jpa")
+    @PersistenceUnit(unitName = "collection-manager-jpa")
     private EntityManagerFactory emf;
 
     @Produces

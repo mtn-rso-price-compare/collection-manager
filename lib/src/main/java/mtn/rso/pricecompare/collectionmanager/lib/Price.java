@@ -1,4 +1,4 @@
-package mtn.rso.pricecompare.priceupdater.lib;
+package mtn.rso.pricecompare.collectionmanager.lib;
 
 import java.time.Instant;
 

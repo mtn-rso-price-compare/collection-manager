@@ -1,7 +1,7 @@
 package mtn.rso.pricecompare.priceupdater.api.v1.resources;
 
 import mtn.rso.pricecompare.collectionmanager.lib.Item;
-import mtn.rso.pricecompare.priceupdater.services.beans.ItemBean;
+import mtn.rso.pricecompare.collectionmanager.services.beans.ItemBean;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;

@@ -1,4 +1,4 @@
-package mtn.rso.pricecompare.priceupdater.services.producers;
+package mtn.rso.pricecompare.collectionmanager.services.producers;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Disposes;

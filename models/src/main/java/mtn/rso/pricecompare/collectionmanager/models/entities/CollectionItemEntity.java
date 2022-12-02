@@ -8,7 +8,9 @@ import javax.persistence.*;
 @NamedQueries(value =
         {
                 @NamedQuery(name = "CollectionItemEntity.getAll",
-                        query = "SELECT cie FROM CollectionItemEntity cie")
+                        query = "SELECT cie FROM CollectionItemEntity cie"),
+                @NamedQuery(name = "CollectionItemEntity.getByCollection",
+                        query = "SELECT cie FROM CollectionItemEntity cie WHERE cie.collectionId = :collectionId")
         })
 public class CollectionItemEntity {
     @Id

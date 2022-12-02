@@ -8,7 +8,9 @@ import javax.persistence.*;
 @NamedQueries(value =
         {
                 @NamedQuery(name = "TagItemEntity.getAll",
-                        query = "SELECT tie FROM TagItemEntity tie")
+                        query = "SELECT tie FROM TagItemEntity tie"),
+                @NamedQuery(name = "TagItemEntity.getByTag",
+                        query = "SELECT tie FROM TagItemEntity tie WHERE tie.tagId = :tagId")
         })
 public class TagItemEntity {
     @Id

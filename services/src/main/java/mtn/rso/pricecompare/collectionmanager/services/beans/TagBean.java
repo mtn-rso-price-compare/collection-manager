@@ -13,7 +13,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,7 +32,7 @@ public class TagBean {
         TypedQuery<TagEntity> query = em.createNamedQuery("TagEntity.getAll", TagEntity.class);
         List<TagEntity> resultList = query.getResultList();
 
-        return resultList.stream().map(te -> TagConverter.toDto(te, Collections.emptyList()))
+        return resultList.stream().map(te -> TagConverter.toDto(te, null))
                 .collect(Collectors.toList());
     }
 
@@ -44,7 +43,7 @@ public class TagBean {
                 .defaultOffset(0).build();
 
         return JPAUtils.queryEntities(em, TagEntity.class, queryParameters).stream()
-                .map(te -> TagConverter.toDto(te, Collections.emptyList())).collect(Collectors.toList());
+                .map(te -> TagConverter.toDto(te, null)).collect(Collectors.toList());
     }
 
     // POST
@@ -63,7 +62,7 @@ public class TagBean {
 
         if (tagEntity.getId() == null)
             throw new RuntimeException("Entity was not persisted");
-        return TagConverter.toDto(tagEntity, Collections.emptyList());
+        return TagConverter.toDto(tagEntity, null);
     }
 
     // GET by id
@@ -74,7 +73,7 @@ public class TagBean {
         if (tagEntity == null)
             throw new NotFoundException();
 
-        return TagConverter.toDto(tagEntity, Collections.emptyList());
+        return TagConverter.toDto(tagEntity, null);
     }
 
     // GET by id
@@ -96,6 +95,7 @@ public class TagBean {
         if (tagEntity == null)
             throw new NotFoundException();
         TagEntity updatedTagEntity = TagConverter.toEntity(tag);
+        TagConverter.completeTag(updatedTagEntity, tagEntity);
 
         try {
             beginTx();
@@ -107,7 +107,7 @@ public class TagBean {
             throw new RuntimeException("Entity was not persisted");
         }
 
-        return TagConverter.toDto(updatedTagEntity, Collections.emptyList());
+        return TagConverter.toDto(updatedTagEntity, null);
     }
 
     // DELETE by id

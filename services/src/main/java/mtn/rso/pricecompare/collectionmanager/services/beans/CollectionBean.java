@@ -13,7 +13,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -33,7 +32,7 @@ public class CollectionBean {
         TypedQuery<CollectionEntity> query = em.createNamedQuery("CollectionEntity.getAll", CollectionEntity.class);
         List<CollectionEntity> resultList = query.getResultList();
 
-        return resultList.stream().map(ce -> CollectionConverter.toDto(ce, Collections.emptyList()))
+        return resultList.stream().map(ce -> CollectionConverter.toDto(ce, null))
                 .collect(Collectors.toList());
     }
 
@@ -44,7 +43,7 @@ public class CollectionBean {
                 .defaultOffset(0).build();
 
         return JPAUtils.queryEntities(em, CollectionEntity.class, queryParameters).stream()
-                .map(ce -> CollectionConverter.toDto(ce, Collections.emptyList())).collect(Collectors.toList());
+                .map(ce -> CollectionConverter.toDto(ce, null)).collect(Collectors.toList());
     }
 
     // POST
@@ -63,7 +62,7 @@ public class CollectionBean {
 
         if (collectionEntity.getId() == null)
             throw new RuntimeException("Entity was not persisted");
-        return CollectionConverter.toDto(collectionEntity, Collections.emptyList());
+        return CollectionConverter.toDto(collectionEntity, null);
     }
 
     // GET by id
@@ -74,7 +73,7 @@ public class CollectionBean {
         if (collectionEntity == null)
             throw new NotFoundException();
 
-        return CollectionConverter.toDto(collectionEntity, Collections.emptyList());
+        return CollectionConverter.toDto(collectionEntity, null);
     }
 
     // GET by id
@@ -96,6 +95,7 @@ public class CollectionBean {
         if (collectionEntity == null)
             throw new NotFoundException();
         CollectionEntity updatedCollectionEntity = CollectionConverter.toEntity(collection);
+        CollectionConverter.completeEntity(updatedCollectionEntity, collectionEntity);
 
         try {
             beginTx();
@@ -107,7 +107,7 @@ public class CollectionBean {
             throw new RuntimeException("Entity was not persisted");
         }
 
-        return CollectionConverter.toDto(updatedCollectionEntity, Collections.emptyList());
+        return CollectionConverter.toDto(updatedCollectionEntity, null);
     }
 
     // DELETE by id

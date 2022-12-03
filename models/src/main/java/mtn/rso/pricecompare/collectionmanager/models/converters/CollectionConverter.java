@@ -15,7 +15,8 @@ public class CollectionConverter {
         dto.setCollectionId(entity.getId());
         dto.setUserId(entity.getUserId());
         dto.setCollectionName(entity.getName());
-        dto.setItemList(collectionItemEntities.stream()
+        if(collectionItemEntities != null)
+            dto.setItemList(collectionItemEntities.stream()
                 .map(CollectionItemConverter::toDto).collect(Collectors.toList()));
         return dto;
     }
@@ -26,6 +27,13 @@ public class CollectionConverter {
         entity.setUserId(dto.getUserId());
         entity.setName(dto.getCollectionName());
         return entity;
+    }
+
+    public static void completeEntity(CollectionEntity partialEntity, CollectionEntity fullEntity) {
+        if(partialEntity.getUserId() == null)
+            partialEntity.setUserId(fullEntity.getUserId());
+        if(partialEntity.getName() == null)
+            partialEntity.setName(fullEntity.getName());
     }
 
 }

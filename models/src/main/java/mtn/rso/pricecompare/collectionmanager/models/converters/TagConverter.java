@@ -1,6 +1,7 @@
 package mtn.rso.pricecompare.collectionmanager.models.converters;
 
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
+import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
 
@@ -14,7 +15,8 @@ public class TagConverter {
         Tag dto = new Tag();
         dto.setTagId(entity.getId());
         dto.setTagName(entity.getName());
-        dto.setItemList(tagItemEntities.stream()
+        if(tagItemEntities != null)
+            dto.setItemList(tagItemEntities.stream()
                 .map(TagItemConverter::toDto).collect(Collectors.toList()));
         return dto;
     }
@@ -24,6 +26,11 @@ public class TagConverter {
         TagEntity entity = new TagEntity();
         entity.setName(dto.getTagName());
         return entity;
+    }
+
+    public static void completeTag(TagEntity partialEntity, TagEntity fullEntity) {
+        if(partialEntity.getName() == null)
+            partialEntity.setName(fullEntity.getName());
     }
 
 }

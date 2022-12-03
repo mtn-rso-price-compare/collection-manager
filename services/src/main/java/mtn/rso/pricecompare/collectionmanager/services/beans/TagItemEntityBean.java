@@ -46,9 +46,13 @@ public class TagItemEntityBean {
     }
 
     // POST
-    public TagItemEntity createTagItemEntity(TagItemEntity tagItemEntity) {
+    // NOTE: This method assumes that tagItemEntity.getItemId() is a valid item ID
+    public TagItemEntity createTagItemEntity(Integer tagId, Integer itemId) {
+        TagItemEntity tagItemEntity = new TagItemEntity();
+        tagItemEntity.setTagId(tagId);
+        tagItemEntity.setItemId(itemId);
+
         TagEntity tagEntity = em.find(TagEntity.class, tagItemEntity.getItemId());
-        // TODO: Lookup itemId in price ms
         if (tagEntity == null)
             throw new NotFoundException();
 

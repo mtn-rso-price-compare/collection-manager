@@ -10,6 +10,7 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
@@ -48,9 +49,13 @@ public class CollectionItemEntityBean {
     }
 
     // POST
-    public CollectionItemEntity createCollectionItemEntity(CollectionItemEntity collectionItemEntity) {
+    // NOTE: This method assumes that collectionItemEntity.getItemId() is a valid item ID
+    public CollectionItemEntity createCollectionItemEntity(Integer collectionId, Integer itemId) {
+        CollectionItemEntity collectionItemEntity = new CollectionItemEntity();
+        collectionItemEntity.setCollectionId(collectionId);
+        collectionItemEntity.setItemId(itemId);
+
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, collectionItemEntity.getCollectionId());
-        // TODO: Lookup itemId in price ms
         if (collectionEntity == null)
             throw new NotFoundException();
 

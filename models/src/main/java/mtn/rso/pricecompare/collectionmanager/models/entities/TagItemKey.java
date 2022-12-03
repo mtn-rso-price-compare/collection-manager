@@ -9,6 +9,13 @@ public class TagItemKey implements Serializable {
 
     private Integer itemId;
 
+    public TagItemKey() {}
+
+    public TagItemKey(Integer tagId, Integer itemId) {
+        this.tagId = tagId;
+        this.itemId = itemId;
+    }
+
     public Integer getTagId() {
         return tagId;
     }

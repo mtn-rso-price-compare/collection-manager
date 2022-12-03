@@ -5,6 +5,7 @@ import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.collectionmanager.lib.Collection;
 import mtn.rso.pricecompare.collectionmanager.models.converters.CollectionConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
+import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -76,6 +77,17 @@ public class CollectionBean {
         return CollectionConverter.toDto(collectionEntity, Collections.emptyList());
     }
 
+    // GET by id
+    // If collection item entities were already retrieved, use this method to automatically set them in DTO.
+    public Collection getCollection(Integer id, List<CollectionItemEntity> collectionItemEntities) {
+
+        CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
+        if (collectionEntity == null)
+            throw new NotFoundException();
+
+        return CollectionConverter.toDto(collectionEntity, collectionItemEntities);
+    }
+
     // PUT by id
     // NOTE: Does not update collection item entities if included. Use CollectionItemEntityBean to persist those.
     public Collection putCollection(Integer id, Collection collection) {
@@ -106,7 +118,10 @@ public class CollectionBean {
         if (collectionEntity == null)
             throw new NotFoundException();
 
-        // TODO: Check if collection has items associated
+        TypedQuery<CollectionItemEntity> query = em.createNamedQuery("CollectionItemEntity.getByCollection", CollectionItemEntity.class);
+        query.setParameter("collectionId", id);
+        if(!query.getResultList().isEmpty())
+            return false;
 
         try {
             beginTx();

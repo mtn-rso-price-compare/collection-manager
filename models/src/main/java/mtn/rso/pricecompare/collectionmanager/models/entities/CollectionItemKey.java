@@ -9,6 +9,13 @@ public class CollectionItemKey implements Serializable {
 
     private Integer itemId;
 
+    public CollectionItemKey() {}
+
+    public CollectionItemKey(Integer collectionId, Integer itemId) {
+        this.collectionId = collectionId;
+        this.itemId = itemId;
+    }
+
     public Integer getCollectionId() {
         return collectionId;
     }

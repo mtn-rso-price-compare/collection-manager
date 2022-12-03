@@ -5,6 +5,7 @@ import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
 import mtn.rso.pricecompare.collectionmanager.models.converters.TagConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagEntity;
+import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -76,6 +77,17 @@ public class TagBean {
         return TagConverter.toDto(tagEntity, Collections.emptyList());
     }
 
+    // GET by id
+    // If collection item entities were already retrieved, use this method to automatically set them in DTO.
+    public Tag getTag(Integer id, List<TagItemEntity> tagItemEntities) {
+
+        TagEntity tagEntity = em.find(TagEntity.class, id);
+        if (tagEntity == null)
+            throw new NotFoundException();
+
+        return TagConverter.toDto(tagEntity, tagItemEntities);
+    }
+
     // PUT by id
     // NOTE: Does not update tag item entities if included. Use TagItemEntityBean to persist those.
     public Tag putTag(Integer id, Tag tag) {
@@ -106,7 +118,10 @@ public class TagBean {
         if (tagEntity == null)
             throw new NotFoundException();
 
-        // TODO: Check if tag has items associated
+        TypedQuery<TagItemEntity> query = em.createNamedQuery("TagItemEntity.getByTag", TagItemEntity.class);
+        query.setParameter("tagId", id);
+        if(!query.getResultList().isEmpty())
+            return false;
 
         try {
             beginTx();

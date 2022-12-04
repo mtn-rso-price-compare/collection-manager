@@ -23,7 +23,7 @@ spec:
             - name: KUMULUZEE_DATASOURCES0_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: cm_postgres
+                  name: cm-postgres
                   key: password
           ports:
             - containerPort: 8080

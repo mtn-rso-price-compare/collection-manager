@@ -44,36 +44,43 @@ public class TagResource {
     @Context
     protected UriInfo uriInfo;
 
-    @Operation(description = "Get a list of all tags.", summary = "Get all tags")
+    @Operation(description = "Get a list of all tags in the database.", summary = "Get all tags")
     @APIResponses({
-            @APIResponse(responseCode = "200",
+            @APIResponse(
+                    responseCode = "200",
                     description = "List of tags",
-                    content = @Content(schema = @Schema(implementation = Tag.class, type = SchemaType.ARRAY)),
-                    headers = {@Header(name = "X-Total-Count", description = "Number of objects in list")}
-            )})
+                    headers = {@Header(
+                            name = "X-Total-Count",
+                            description = "Number of objects in list"
+                    )},
+                    content = @Content(schema = @Schema(implementation = Tag.class, type = SchemaType.ARRAY))
+            )
+    })
     @GET
     public Response getTag() {
         List<Tag> tagList = tagBean.getTagFilter(uriInfo);
-        return Response.status(Response.Status.OK).entity(tagList).build();
+        return Response.status(Response.Status.OK).header("X-Total-Count", tagList.size()).entity(tagList).build();
     }
 
-    @Operation(description = "Create a tag for items.", summary = "Create tag")
+    @Operation(description = "Create a new tag for items.", summary = "Create tag")
     @APIResponses({
-            @APIResponse(responseCode = "201",
+            @APIResponse(
+                    responseCode = "201",
                     description = "Tag successfully created",
                     content = @Content(schema = @Schema(implementation = Tag.class))
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "500",
-                description = "Error in persisting tag"
-            )})
+            @APIResponse(
+                    responseCode = "500",
+                    description = "Error in persisting tag"
+            )
+    })
     @POST
-    public Response createTag(@RequestBody(
-            description = "Tag DTO (without items)",
-            required = true, content = @Content(
-            schema = @Schema(implementation = Tag.class))) Tag tag) {
+    public Response createTag(@RequestBody(description = "Tag DTO (without items)", required = true,
+            content = @Content(schema = @Schema(implementation = Tag.class))) Tag tag) {
 
         if(tag.getTagName() == null || tag.getTagName().equals(""))
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -88,19 +95,22 @@ public class TagResource {
     }
 
 
-    @Operation(description = "Get a tag and its items.", summary = "Get tag items")
+    @Operation(description = "Get a tag and its items by tag ID.", summary = "Get tag items")
     @APIResponses({
-            @APIResponse(responseCode = "200",
+            @APIResponse(
+                    responseCode = "200",
                     description = "Tag",
                     content = @Content(schema = @Schema(implementation = Tag.class))
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Tag not found"
-            )})
+            )
+    })
     @GET
     @Path("/{tagId}")
-    public Response getTag(@Parameter(description = "Tag ID", required = true)
-                                     @PathParam("tagId") Integer tagId) {
+    public Response getTag(@Parameter(name = "tag ID", required = true)
+                               @PathParam("tagId") Integer tagId) {
 
         Tag tag;
         try {
@@ -113,31 +123,32 @@ public class TagResource {
         return Response.status(Response.Status.OK).entity(tag).build();
     }
 
-    @Operation(description = "Update information about tag.", summary = "Update tag")
+    @Operation(description = "Update information about a tag.", summary = "Update tag")
     @APIResponses({
             @APIResponse(
                     responseCode = "200",
                     description = "Tag successfully updated",
                     content = @Content(schema = @Schema(implementation = Tag.class))
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Tag not found"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in persisting tag"
-            )})
+            )
+    })
     @PUT
     @Path("{tagId}")
-    public Response putTag(@Parameter(description = "Tag ID", required = true)
-                                      @PathParam("tagId") Integer tagId,
-                                  @RequestBody(
-                                             description = "Tag DTO (without items)",
-                                             required = true, content = @Content(
-                                             schema = @Schema(implementation = Tag.class)))
-                                             Tag tag) {
+    public Response putTag(@RequestBody(description = "Tag DTO (without items)", required = true,
+            content = @Content(schema = @Schema(implementation = Tag.class))) Tag tag,
+                           @Parameter(name = "tag ID", required = true)
+                           @PathParam("tagId") Integer tagId) {
 
         if(tag.getTagName() != null && tag.getTagName().equals(""))
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -163,13 +174,15 @@ public class TagResource {
                     responseCode = "404",
                     description = "Tag not found"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in deleting tag"
-            )})
+            )
+    })
     @DELETE
     @Path("{tagId}")
-    public Response deleteTag(@Parameter(description = "Tag ID", required = true)
-                                        @PathParam("tagId") Integer tagId) {
+    public Response deleteTag(@Parameter(name = "tag ID", required = true)
+                                  @PathParam("tagId") Integer tagId) {
 
         List<TagItemEntity> tagItemEntities = tagItemEntityBean.getTagItemEntityByTag(tagId);
 
@@ -200,30 +213,34 @@ public class TagResource {
 
     @Operation(description = "Add a tag to an item.", summary = "Tag an item")
     @APIResponses({
-            @APIResponse(responseCode = "204",
+            @APIResponse(
+                    responseCode = "204",
                     description = "Item successfully tagged"
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Tag not found"
             ),
-            @APIResponse(responseCode = "409",
+            @APIResponse(
+                    responseCode = "409",
                     description = "Item already tagged"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in tagging item"
-            )})
+            )
+    })
     @POST
     @Path("{tagId}")
-    public Response createTagItem(@Parameter(description = "Tag ID", required = true)
-                                      @PathParam("tagId") Integer tagId,
-                                  @RequestBody(
-                                          description = "Item DTO (itemId only)",
-                                          required = true, content = @Content(
-                                                  schema = @Schema(implementation = Item.class)))
-                                          Item item) {
+    public Response createTagItem(@RequestBody(description = "Item DTO (itemId only)", required = true,
+            content = @Content(schema = @Schema(implementation = Item.class))) Item item,
+                                  @Parameter(name = "tag ID", required = true)
+                                  @PathParam("tagId") Integer tagId
+    ) {
         if(item.getItemId() == null)
             return Response.status(Response.Status.BAD_REQUEST).build();
         // TODO: Lookup itemId in price ms
@@ -256,16 +273,18 @@ public class TagResource {
             ),
             @APIResponse(
                     responseCode = "404",
-                    description = "Tag not found on item"
+                    description = "Tag not found for item"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in untagging item"
-            )})
+            )
+    })
     @DELETE
     @Path("{tagId}/{itemId}")
-    public Response deleteTagItem(@Parameter(description = "Tag ID", required = true)
+    public Response deleteTagItem(@Parameter(name = "tag ID", required = true)
                                       @PathParam("tagId") Integer tagId,
-                                  @Parameter(description = "Item ID", required = true)
+                                  @Parameter(name = "item ID", required = true)
                                   @PathParam("itemId") Integer itemId) {
         boolean success;
         try {

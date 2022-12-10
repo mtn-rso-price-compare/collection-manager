@@ -1,10 +1,16 @@
 package mtn.rso.pricecompare.collectionmanager.lib;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.List;
 
 public class Collection {
+
+    @Schema(example = "1")
     private Integer collectionId;
+    @Schema(example = "1")
     private Integer userId;
+    @Schema(example = "Priljubljeni izdelki")
     private String collectionName;
     private List<Item> itemList;
 

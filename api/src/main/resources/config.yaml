@@ -13,3 +13,11 @@ kumuluzee:
       username: dbuser
       password: postgres
       max-pool-size: 20
+  dev:
+    scan-libraries:
+      - collection-manager-lib
+  openapi-mp:
+    enabled: true
+    ui:
+      enabled: true
+      mapping: /openapi/ui

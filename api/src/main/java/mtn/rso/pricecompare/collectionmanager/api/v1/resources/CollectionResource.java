@@ -44,36 +44,43 @@ public class CollectionResource {
     @Context
     protected UriInfo uriInfo;
 
-    @Operation(description = "Get a list of all collections.", summary = "Get all collections")
+    @Operation(description = "Get a list of all collections in the database.", summary = "Get all collections")
     @APIResponses({
-            @APIResponse(responseCode = "200",
+            @APIResponse(
+                    responseCode = "200",
                     description = "List of collections",
-                    content = @Content(schema = @Schema(implementation = Collection.class, type = SchemaType.ARRAY)),
-                    headers = {@Header(name = "X-Total-Count", description = "Number of objects in list")}
-            )})
+                    headers = {@Header(
+                            name = "X-Total-Count",
+                            description = "Number of objects in list"
+                    )},
+                    content = @Content(schema = @Schema(implementation = Collection.class, type = SchemaType.ARRAY))
+            )
+    })
     @GET
     public Response getCollection() {
         List<Collection> collectionList = collectionBean.getCollectionFilter(uriInfo);
-        return Response.status(Response.Status.OK).entity(collectionList).build();
+        return Response.status(Response.Status.OK).header("X-Total-Count", collectionList.size()).entity(collectionList).build();
     }
 
-    @Operation(description = "Create a collection of items.", summary = "Create collection")
+    @Operation(description = "Create a new collection of items.", summary = "Create collection")
     @APIResponses({
-            @APIResponse(responseCode = "201",
+            @APIResponse(
+                    responseCode = "201",
                     description = "Collection successfully created",
                     content = @Content(schema = @Schema(implementation = Collection.class))
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "500",
-                description = "Error in persisting collection"
-            )})
+            @APIResponse(
+                    responseCode = "500",
+                    description = "Error in persisting collection"
+            )
+    })
     @POST
-    public Response createCollection(@RequestBody(
-            description = "Collection DTO (without items)",
-            required = true, content = @Content(
-            schema = @Schema(implementation = Collection.class))) Collection collection) {
+    public Response createCollection(@RequestBody(description = "Collection DTO (without items)", required = true,
+            content = @Content(schema = @Schema(implementation = Collection.class))) Collection collection) {
 
         if(collection.getUserId() == null || collection.getCollectionName() == null ||
                 collection.getCollectionName().equals(""))
@@ -88,20 +95,22 @@ public class CollectionResource {
         return Response.status(Response.Status.CREATED).entity(collection).build();
     }
 
-
-    @Operation(description = "Get a collection and its items.", summary = "Get collection items")
+    @Operation(description = "Get a collection and its items by collection ID.", summary = "Get collection items")
     @APIResponses({
-            @APIResponse(responseCode = "200",
+            @APIResponse(
+                    responseCode = "200",
                     description = "Collection",
                     content = @Content(schema = @Schema(implementation = Collection.class))
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Collection not found"
-            )})
+            )
+    })
     @GET
     @Path("/{collectionId}")
-    public Response getCollection(@Parameter(description = "Collection ID", required = true)
-                                     @PathParam("collectionId") Integer collectionId) {
+    public Response getCollection(@Parameter(name = "collection ID", required = true)
+                                      @PathParam("collectionId") Integer collectionId) {
 
         Collection collection;
         try {
@@ -114,31 +123,32 @@ public class CollectionResource {
         return Response.status(Response.Status.OK).entity(collection).build();
     }
 
-    @Operation(description = "Update information about collection.", summary = "Update collection")
+    @Operation(description = "Update information about a collection.", summary = "Update collection")
     @APIResponses({
             @APIResponse(
                     responseCode = "200",
                     description = "Collection successfully updated",
                     content = @Content(schema = @Schema(implementation = Collection.class))
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Collection not found"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in persisting collection"
-            )})
+            )
+    })
     @PUT
     @Path("{collectionId}")
-    public Response putCollection(@Parameter(description = "Collection ID", required = true)
-                                      @PathParam("collectionId") Integer collectionId,
-                                  @RequestBody(
-                                             description = "Collection DTO (without items)",
-                                             required = true, content = @Content(
-                                             schema = @Schema(implementation = Collection.class)))
-                                             Collection collection) {
+    public Response putCollection(@RequestBody(description = "Collection DTO (without items)", required = true,
+            content = @Content(schema = @Schema(implementation = Collection.class))) Collection collection,
+                                  @Parameter(name = "collection ID", required = true)
+                                  @PathParam("collectionId") Integer collectionId) {
 
         if(collection.getCollectionName() != null && collection.getCollectionName().equals(""))
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -164,13 +174,15 @@ public class CollectionResource {
                     responseCode = "404",
                     description = "Collection not found"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in deleting collection"
-            )})
+            )
+    })
     @DELETE
     @Path("{collectionId}")
-    public Response deleteCollection(@Parameter(description = "Collection ID", required = true)
-                                        @PathParam("collectionId") Integer collectionId) {
+    public Response deleteCollection(@Parameter(name = "collection ID", required = true)
+                                         @PathParam("collectionId") Integer collectionId) {
 
         List<CollectionItemEntity> collectionItemEntities = collectionItemEntityBean
                 .getCollectionItemEntityByCollection(collectionId);
@@ -202,30 +214,33 @@ public class CollectionResource {
 
     @Operation(description = "Add an item to a collection.", summary = "Add collection item")
     @APIResponses({
-            @APIResponse(responseCode = "204",
+            @APIResponse(
+                    responseCode = "204",
                     description = "Item successfully added"
             ),
-            @APIResponse(responseCode = "400",
+            @APIResponse(
+                    responseCode = "400",
                     description = "Validation error"
             ),
-            @APIResponse(responseCode = "404",
+            @APIResponse(
+                    responseCode = "404",
                     description = "Collection not found"
             ),
-            @APIResponse(responseCode = "409",
+            @APIResponse(
+                    responseCode = "409",
                     description = "Item already in collection"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in adding item"
-            )})
+            )
+    })
     @POST
     @Path("{collectionId}")
-    public Response createCollectionItem(@Parameter(description = "Collection ID", required = true)
-                                             @PathParam("collectionId") Integer collectionId,
-                                         @RequestBody(
-                                                 description = "Item DTO (itemId only)",
-                                                 required = true, content = @Content(
-                                                         schema = @Schema(implementation = Item.class)))
-                                                 Item item) {
+    public Response createCollectionItem(@RequestBody(description = "Item DTO (itemId only)", required = true,
+            content = @Content(schema = @Schema(implementation = Item.class))) Item item,
+                                         @Parameter(name = "collection ID", required = true)
+                                         @PathParam("collectionId") Integer collectionId) {
         if(item.getItemId() == null)
             return Response.status(Response.Status.BAD_REQUEST).build();
         // TODO: Lookup itemId in price ms
@@ -258,16 +273,18 @@ public class CollectionResource {
             ),
             @APIResponse(
                     responseCode = "404",
-                    description = "Collection item not found"
+                    description = "Item not found in collection"
             ),
-            @APIResponse(responseCode = "500",
+            @APIResponse(
+                    responseCode = "500",
                     description = "Error in removing item"
-            )})
+            )
+    })
     @DELETE
     @Path("{collectionId}/{itemId}")
-    public Response deleteCollectionItem(@Parameter(description = "Collection ID", required = true)
+    public Response deleteCollectionItem(@Parameter(name = "collection ID", required = true)
                                              @PathParam("collectionId") Integer collectionId,
-                                         @Parameter(description = "Item ID", required = true)
+                                         @Parameter(name = "item ID", required = true)
                                          @PathParam("itemId") Integer itemId) {
         boolean success;
         try {

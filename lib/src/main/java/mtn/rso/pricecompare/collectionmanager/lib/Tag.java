@@ -1,9 +1,14 @@
 package mtn.rso.pricecompare.collectionmanager.lib;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.List;
 
 public class Tag {
+
+    @Schema(example = "1")
     private Integer tagId;
+    @Schema(example = "Meso in mesni izdelki")
     private String tagName;
     private List<Item> itemList;
 

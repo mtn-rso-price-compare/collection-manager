@@ -3,6 +3,7 @@ package mtn.rso.pricecompare.collectionmanager.services.beans;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.collectionmanager.models.entities.*;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -23,6 +24,7 @@ public class TagItemEntityBean {
     private EntityManager em;
 
     // generic GET query for all entities
+    @Counted(name = "tagitems_get_all_counter", description = "Displays the total number of getTagItemEntity() invocations that have occurred.")
     public List<TagItemEntity> getTagItemEntity() {
 
         TypedQuery<TagItemEntity> query = em.createNamedQuery("TagItemEntity.getAll", TagItemEntity.class);
@@ -30,6 +32,7 @@ public class TagItemEntityBean {
     }
 
     // GET request with parameters
+    @Counted(name = "tagitems_get_counter", description = "Displays the total number of getTagItemEntity(uriInfo) invocations that have occurred.")
     public List<TagItemEntity> getTagItemEntityFilter(UriInfo uriInfo) {
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
                 .defaultOffset(0).build();
@@ -38,6 +41,7 @@ public class TagItemEntityBean {
     }
 
     // GET by tagId
+    @Counted(name = "tagitems_get_bytag_counter", description = "Displays the total number of getTagItemEntity(tagId) invocations that have occurred.")
     public List<TagItemEntity> getTagItemEntityByTag(Integer tagId) {
         TypedQuery<TagItemEntity> query = em.createNamedQuery("TagItemEntity.getByTag", TagItemEntity.class);
 
@@ -47,6 +51,7 @@ public class TagItemEntityBean {
 
     // POST
     // NOTE: This method assumes that tagItemEntity.getItemId() is a valid item ID
+    @Counted(name = "tagitem_create_counter", description = "Displays the total number of createTagItemEntity(tagId, itemId) invocations that have occurred.")
     public TagItemEntity createTagItemEntity(Integer tagId, Integer itemId) {
         TagItemEntity tagItemEntity = new TagItemEntity();
         tagItemEntity.setTagId(tagId);
@@ -70,6 +75,7 @@ public class TagItemEntityBean {
     }
 
     // GET by id
+    @Counted(name = "tagitem_get_counter", description = "Displays the total number of getTagItemEntity(tagItemKey) invocations that have occurred.")
     public TagItemEntity getTagItemEntity(TagItemKey tagItemKey) {
         TagItemEntity tagItemEntity = em.find(TagItemEntity.class, tagItemKey);
         if (tagItemEntity == null)
@@ -79,6 +85,7 @@ public class TagItemEntityBean {
     }
 
     // DELETE by id
+    @Counted(name = "tagitem_delete_counter", description = "Displays the total number of deleteTagItemEntity(tagItemKey) invocations that have occurred.")
     public boolean deleteTagItemEntity(TagItemKey tagItemKey) {
         TagItemEntity tagItemEntity = em.find(TagItemEntity.class, tagItemKey);
         if (tagItemEntity == null)

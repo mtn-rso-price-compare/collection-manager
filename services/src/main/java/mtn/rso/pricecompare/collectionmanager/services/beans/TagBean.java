@@ -6,6 +6,7 @@ import mtn.rso.pricecompare.collectionmanager.lib.Tag;
 import mtn.rso.pricecompare.collectionmanager.models.converters.TagConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -27,6 +28,7 @@ public class TagBean {
     private EntityManager em;
 
     // generic GET query for all entities
+    @Counted(name = "tags_get_all_counter", description = "Displays the total number of getTag() invocations that have occurred.")
     public List<Tag> getTag() {
 
         TypedQuery<TagEntity> query = em.createNamedQuery("TagEntity.getAll", TagEntity.class);
@@ -37,6 +39,7 @@ public class TagBean {
     }
 
     // GET request with parameters
+    @Counted(name = "tags_get_counter", description = "Displays the total number of getTag(uriInfo) invocations that have occurred.")
     public List<Tag> getTagFilter(UriInfo uriInfo) {
 
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
@@ -48,6 +51,7 @@ public class TagBean {
 
     // POST
     // NOTE: Does not create tag item entities if included. Use TagItemEntityBean to persist those.
+    @Counted(name = "tag_create_counter", description = "Displays the total number of createTag(tag) invocations that have occurred.")
     public Tag createTag(Tag tag) {
 
         TagEntity tagEntity = TagConverter.toEntity(tag);
@@ -67,6 +71,7 @@ public class TagBean {
 
     // GET by id
     // NOTE: Does not get tag item entities. Use TagItemEntityBean to get them and set manually.
+    @Counted(name = "tag_get_counter", description = "Displays the total number of getTag(id) invocations that have occurred.")
     public Tag getTag(Integer id) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
@@ -78,6 +83,7 @@ public class TagBean {
 
     // GET by id
     // If collection item entities were already retrieved, use this method to automatically set them in DTO.
+    @Counted(name = "tag_get_withitems_counter", description = "Displays the total number of getTag(id, tagItemEntities) invocations that have occurred.")
     public Tag getTag(Integer id, List<TagItemEntity> tagItemEntities) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
@@ -89,6 +95,7 @@ public class TagBean {
 
     // PUT by id
     // NOTE: Does not update tag item entities if included. Use TagItemEntityBean to persist those.
+    @Counted(name = "tag_put_counter", description = "Displays the total number of putTag(id, tag) invocations that have occurred.")
     public Tag putTag(Integer id, Tag tag) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
@@ -112,6 +119,7 @@ public class TagBean {
 
     // DELETE by id
     // NOTE: It will fail if tag has associated items. Use TagItemEntityBean to delete those first.
+    @Counted(name = "tag_delete_counter", description = "Displays the total number of deleteTag(id) invocations that have occurred.")
     public boolean deleteTag(Integer id) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);

@@ -21,3 +21,14 @@ kumuluzee:
     ui:
       enabled: true
       mapping: /openapi/ui
+  metrics:
+    servlet:
+      enabled: true
+      mapping: /metrics
+    web-instrumentation:
+      - name: collection-endpoint
+        url-pattern: /v1/collection/*
+        status-codes: "200, 201, 204, 400, 404, 409, 500"
+      - name: tag-endpoint
+        url-pattern: /v1/tag/*
+        status-codes: "200, 201, 204, 400, 404, 409, 500"

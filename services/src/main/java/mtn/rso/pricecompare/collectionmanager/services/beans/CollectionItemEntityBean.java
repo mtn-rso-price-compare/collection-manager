@@ -5,12 +5,12 @@ import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemKey;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
@@ -26,6 +26,7 @@ public class CollectionItemEntityBean {
     private EntityManager em;
 
     // generic GET query for all entities
+    @Counted(name = "collectionitems_get_all_counter", description = "Displays the total number of getCollectionItemEntity() invocations that have occurred.")
     public List<CollectionItemEntity> getCollectionItemEntity() {
 
         TypedQuery<CollectionItemEntity> query = em.createNamedQuery("CollectionItemEntity.getAll", CollectionItemEntity.class);
@@ -33,6 +34,7 @@ public class CollectionItemEntityBean {
     }
 
     // GET request with parameters
+    @Counted(name = "collectionitems_get_counter", description = "Displays the total number of getCollectionItemEntity(uriInfo) invocations that have occurred.")
     public List<CollectionItemEntity> getCollectionItemEntityFilter(UriInfo uriInfo) {
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
                 .defaultOffset(0).build();
@@ -41,6 +43,7 @@ public class CollectionItemEntityBean {
     }
 
     // GET by collectionId
+    @Counted(name = "collectionitems_get_bycollection_counter", description = "Displays the total number of getCollectionItemEntity(collectionId) invocations that have occurred.")
     public List<CollectionItemEntity> getCollectionItemEntityByCollection(Integer collectionId) {
         TypedQuery<CollectionItemEntity> query = em.createNamedQuery("CollectionItemEntity.getByCollection", CollectionItemEntity.class);
 
@@ -50,6 +53,7 @@ public class CollectionItemEntityBean {
 
     // POST
     // NOTE: This method assumes that collectionItemEntity.getItemId() is a valid item ID
+    @Counted(name = "collectionitem_create_counter", description = "Displays the total number of createCollectionItemEntity(collectionId, itemId) invocations that have occurred.")
     public CollectionItemEntity createCollectionItemEntity(Integer collectionId, Integer itemId) {
         CollectionItemEntity collectionItemEntity = new CollectionItemEntity();
         collectionItemEntity.setCollectionId(collectionId);
@@ -73,6 +77,7 @@ public class CollectionItemEntityBean {
     }
 
     // GET by id
+    @Counted(name = "collectionitem_get_counter", description = "Displays the total number of getCollectionItemEntity(collectionItemKey) invocations that have occurred.")
     public CollectionItemEntity getCollectionItemEntity(CollectionItemKey collectionItemKey) {
         CollectionItemEntity collectionItemEntity = em.find(CollectionItemEntity.class, collectionItemKey);
         if (collectionItemEntity == null)
@@ -82,6 +87,7 @@ public class CollectionItemEntityBean {
     }
 
     // DELETE by id
+    @Counted(name = "collectionitem_delete_counter", description = "Displays the total number of deleteCollectionItemEntity(collectionItemKey) invocations that have occurred.")
     public boolean deleteCollectionItemEntity(CollectionItemKey collectionItemKey) {
         CollectionItemEntity collectionItemEntity = em.find(CollectionItemEntity.class, collectionItemKey);
         if (collectionItemEntity == null)

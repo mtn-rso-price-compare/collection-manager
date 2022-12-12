@@ -6,6 +6,7 @@ import mtn.rso.pricecompare.collectionmanager.lib.Collection;
 import mtn.rso.pricecompare.collectionmanager.models.converters.CollectionConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
+import org.eclipse.microprofile.metrics.annotation.Counted;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -27,6 +28,7 @@ public class CollectionBean {
     private EntityManager em;
 
     // generic GET query for all entities
+    @Counted(name = "collections_get_all_counter", description = "Displays the total number of getCollection() invocations that have occurred.")
     public List<Collection> getCollection() {
 
         TypedQuery<CollectionEntity> query = em.createNamedQuery("CollectionEntity.getAll", CollectionEntity.class);
@@ -37,6 +39,7 @@ public class CollectionBean {
     }
 
     // GET request with parameters
+    @Counted(name = "collections_get_counter", description = "Displays the total number of getCollection(uriInfo) invocations that have occurred.")
     public List<Collection> getCollectionFilter(UriInfo uriInfo) {
 
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
@@ -48,6 +51,7 @@ public class CollectionBean {
 
     // POST
     // NOTE: Does not create collection item entities if included. Use CollectionItemEntityBean to persist those.
+    @Counted(name = "collection_create_counter", description = "Displays the total number of createCollection(collection) invocations that have occurred.")
     public Collection createCollection(Collection collection) {
 
         CollectionEntity collectionEntity = CollectionConverter.toEntity(collection);
@@ -67,6 +71,7 @@ public class CollectionBean {
 
     // GET by id
     // NOTE: Does not get collection item entities. Use CollectionItemEntityBean to get them and set manually.
+    @Counted(name = "collection_get_counter", description = "Displays the total number of getCollection(id) invocations that have occurred.")
     public Collection getCollection(Integer id) {
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
@@ -78,6 +83,7 @@ public class CollectionBean {
 
     // GET by id
     // If collection item entities were already retrieved, use this method to automatically set them in DTO.
+    @Counted(name = "collection_get_withitems_counter", description = "Displays the total number of getCollection(id, collectionItemEntities) invocations that have occurred.")
     public Collection getCollection(Integer id, List<CollectionItemEntity> collectionItemEntities) {
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
@@ -89,6 +95,7 @@ public class CollectionBean {
 
     // PUT by id
     // NOTE: Does not update collection item entities if included. Use CollectionItemEntityBean to persist those.
+    @Counted(name = "collection_put_counter", description = "Displays the total number of putCollection(id, collection) invocations that have occurred.")
     public Collection putCollection(Integer id, Collection collection) {
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
@@ -112,6 +119,7 @@ public class CollectionBean {
 
     // DELETE by id
     // NOTE: It will fail if collection has associated items. Use CollectionItemEntityBean to delete those first.
+    @Counted(name = "collection_delete_counter", description = "Displays the total number of deleteCollection(id) invocations that have occurred.")
     public boolean deleteCollection(Integer id) {
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);

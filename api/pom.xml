@@ -20,6 +20,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.kumuluz.ee.config</groupId>
+            <artifactId>kumuluzee-config-mp</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.kumuluz.ee.openapi</groupId>
             <artifactId>kumuluzee-openapi-mp</artifactId>
         </dependency>
@@ -34,8 +39,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.kumuluz.ee.config</groupId>
-            <artifactId>kumuluzee-config-mp</artifactId>
+            <artifactId>kumuluzee-logs-log4j2</artifactId>
+            <groupId>com.kumuluz.ee.logs</groupId>
         </dependency>
 
         <dependency>

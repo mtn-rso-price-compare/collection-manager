@@ -1,5 +1,6 @@
 package mtn.rso.pricecompare.collectionmanager.api.v1.resources;
 
+import com.kumuluz.ee.logs.cdi.Log;
 import mtn.rso.pricecompare.collectionmanager.lib.Item;
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
@@ -24,16 +25,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
-import java.util.logging.Logger;
 
 
+@Log
 @ApplicationScoped
 @Path("/tag")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class TagResource {
-
-    private Logger log = Logger.getLogger(TagResource.class.getName());
 
     @Inject
     private TagBean tagBean;
@@ -58,8 +57,10 @@ public class TagResource {
     })
     @GET
     public Response getTag() {
+
         List<Tag> tagList = tagBean.getTagFilter(uriInfo);
-        return Response.status(Response.Status.OK).header("X-Total-Count", tagList.size()).entity(tagList).build();
+        return Response.status(Response.Status.OK).header("X-Total-Count", tagList.size())
+                .entity(tagList).build();
     }
 
     @Operation(description = "Create a new tag for items.", summary = "Create tag")
@@ -82,7 +83,7 @@ public class TagResource {
     public Response createTag(@RequestBody(description = "Tag DTO (without items)", required = true,
             content = @Content(schema = @Schema(implementation = Tag.class))) Tag tag) {
 
-        if(tag.getTagName() == null || tag.getTagName().equals(""))
+        if(tag == null || tag.getTagName() == null || tag.getTagName().equals(""))
             return Response.status(Response.Status.BAD_REQUEST).build();
 
         try {
@@ -120,6 +121,7 @@ public class TagResource {
         } catch (NotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+
         return Response.status(Response.Status.OK).entity(tag).build();
     }
 
@@ -150,7 +152,7 @@ public class TagResource {
                            @Parameter(name = "tag ID", required = true)
                            @PathParam("tagId") Integer tagId) {
 
-        if(tag.getTagName() != null && tag.getTagName().equals(""))
+        if(tag == null || (tag.getTagName() != null && tag.getTagName().equals("")))
             return Response.status(Response.Status.BAD_REQUEST).build();
 
         try {
@@ -239,10 +241,11 @@ public class TagResource {
     public Response createTagItem(@RequestBody(description = "Item DTO (itemId only)", required = true,
             content = @Content(schema = @Schema(implementation = Item.class))) Item item,
                                   @Parameter(name = "tag ID", required = true)
-                                  @PathParam("tagId") Integer tagId
-    ) {
-        if(item.getItemId() == null)
+                                  @PathParam("tagId") Integer tagId) {
+
+        if(item == null || item.getItemId() == null)
             return Response.status(Response.Status.BAD_REQUEST).build();
+
         // TODO: Lookup itemId in price ms
 
         boolean resourceExists = true;
@@ -286,6 +289,7 @@ public class TagResource {
                                       @PathParam("tagId") Integer tagId,
                                   @Parameter(name = "item ID", required = true)
                                   @PathParam("itemId") Integer itemId) {
+        
         boolean success;
         try {
             success = tagItemEntityBean.deleteTagItemEntity(new TagItemKey(tagId, itemId));

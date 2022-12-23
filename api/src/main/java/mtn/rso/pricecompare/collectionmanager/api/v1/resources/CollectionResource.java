@@ -1,5 +1,6 @@
 package mtn.rso.pricecompare.collectionmanager.api.v1.resources;
 
+import com.kumuluz.ee.logs.cdi.Log;
 import mtn.rso.pricecompare.collectionmanager.lib.Collection;
 import mtn.rso.pricecompare.collectionmanager.lib.Item;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
@@ -24,16 +25,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
-import java.util.logging.Logger;
 
 
+@Log
 @ApplicationScoped
 @Path("/collection")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CollectionResource {
-
-    private Logger log = Logger.getLogger(CollectionResource.class.getName());
 
     @Inject
     private CollectionBean collectionBean;
@@ -58,8 +57,10 @@ public class CollectionResource {
     })
     @GET
     public Response getCollection() {
+
         List<Collection> collectionList = collectionBean.getCollectionFilter(uriInfo);
-        return Response.status(Response.Status.OK).header("X-Total-Count", collectionList.size()).entity(collectionList).build();
+        return Response.status(Response.Status.OK).header("X-Total-Count", collectionList.size())
+                .entity(collectionList).build();
     }
 
     @Operation(description = "Create a new collection of items.", summary = "Create collection")
@@ -82,7 +83,7 @@ public class CollectionResource {
     public Response createCollection(@RequestBody(description = "Collection DTO (without items)", required = true,
             content = @Content(schema = @Schema(implementation = Collection.class))) Collection collection) {
 
-        if(collection.getUserId() == null || collection.getCollectionName() == null ||
+        if(collection == null || collection.getUserId() == null || collection.getCollectionName() == null ||
                 collection.getCollectionName().equals(""))
             return Response.status(Response.Status.BAD_REQUEST).build();
 
@@ -120,6 +121,7 @@ public class CollectionResource {
         } catch (NotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+
         return Response.status(Response.Status.OK).entity(collection).build();
     }
 
@@ -150,7 +152,8 @@ public class CollectionResource {
                                   @Parameter(name = "collection ID", required = true)
                                   @PathParam("collectionId") Integer collectionId) {
 
-        if(collection.getCollectionName() != null && collection.getCollectionName().equals(""))
+        if(collection == null || (collection.getCollectionName() != null
+                && collection.getCollectionName().equals("")))
             return Response.status(Response.Status.BAD_REQUEST).build();
 
         try {
@@ -241,8 +244,10 @@ public class CollectionResource {
             content = @Content(schema = @Schema(implementation = Item.class))) Item item,
                                          @Parameter(name = "collection ID", required = true)
                                          @PathParam("collectionId") Integer collectionId) {
-        if(item.getItemId() == null)
+
+        if(item == null || item.getItemId() == null)
             return Response.status(Response.Status.BAD_REQUEST).build();
+
         // TODO: Lookup itemId in price ms
 
         boolean resourceExists = true;
@@ -286,6 +291,7 @@ public class CollectionResource {
                                              @PathParam("collectionId") Integer collectionId,
                                          @Parameter(name = "item ID", required = true)
                                          @PathParam("itemId") Integer itemId) {
+
         boolean success;
         try {
             success = collectionItemEntityBean.deleteCollectionItemEntity(new CollectionItemKey(collectionId, itemId));

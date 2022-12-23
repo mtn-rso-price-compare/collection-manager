@@ -32,3 +32,20 @@ kumuluzee:
       - name: tag-endpoint
         url-pattern: /v1/tag/*
         status-codes: "200, 201, 204, 400, 404, 409, 500"
+  logs:
+    config-file: '<?xml version="1.0" encoding="UTF-8"?>
+                        <Configuration name="comments">
+                            <Appenders>
+                                <Console name="console" target="SYSTEM_OUT">
+                                    <PatternLayout pattern="%d %p %marker %m %X %ex %n"/>
+                                </Console>
+                            </Appenders>
+                            <Loggers>
+                                <!-- Default logger -->
+                                <Logger name="mtn.rso.pricecompare.collectionmanager" level="TRACE"/>
+                                <Root level="info">
+                                    <AppenderRef ref="console" level="trace" />
+                                    <AppenderRef ref="logstash" level="trace" />
+                                </Root>
+                            </Loggers>
+                        </Configuration>'

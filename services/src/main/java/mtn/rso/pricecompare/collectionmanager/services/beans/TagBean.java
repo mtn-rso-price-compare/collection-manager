@@ -1,5 +1,8 @@
 package mtn.rso.pricecompare.collectionmanager.services.beans;
 
+import com.kumuluz.ee.logs.LogManager;
+import com.kumuluz.ee.logs.Logger;
+import com.kumuluz.ee.logs.cdi.Log;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
@@ -15,14 +18,14 @@ import javax.persistence.TypedQuery;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
+@Log
 @RequestScoped
 public class TagBean {
 
-    private Logger log = Logger.getLogger(TagBean.class.getName());
+    private final Logger log = LogManager.getLogger(TagBean.class.getName());
 
     @Inject
     private EntityManager em;
@@ -33,9 +36,7 @@ public class TagBean {
 
         TypedQuery<TagEntity> query = em.createNamedQuery("TagEntity.getAll", TagEntity.class);
         List<TagEntity> resultList = query.getResultList();
-
-        return resultList.stream().map(te -> TagConverter.toDto(te, null))
-                .collect(Collectors.toList());
+        return resultList.stream().map(te -> TagConverter.toDto(te, null)).collect(Collectors.toList());
     }
 
     // GET request with parameters
@@ -44,7 +45,6 @@ public class TagBean {
 
         QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
                 .defaultOffset(0).build();
-
         return JPAUtils.queryEntities(em, TagEntity.class, queryParameters).stream()
                 .map(te -> TagConverter.toDto(te, null)).collect(Collectors.toList());
     }
@@ -64,8 +64,11 @@ public class TagBean {
             rollbackTx();
         }
 
-        if (tagEntity.getId() == null)
+        if (tagEntity.getId() == null) {
+            log.warn("createTag(tag): could not persist entity.");
             throw new RuntimeException("Entity was not persisted");
+        }
+
         return TagConverter.toDto(tagEntity, null);
     }
 
@@ -75,20 +78,24 @@ public class TagBean {
     public Tag getTag(Integer id) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
-        if (tagEntity == null)
+        if (tagEntity == null) {
+            log.debug("getTag(id): could not find entity.");
             throw new NotFoundException();
+        }
 
         return TagConverter.toDto(tagEntity, null);
     }
 
     // GET by id
     // If collection item entities were already retrieved, use this method to automatically set them in DTO.
-    @Counted(name = "tag_get_withitems_counter", description = "Displays the total number of getTag(id, tagItemEntities) invocations that have occurred.")
+    @Counted(name = "tag_get_withItems_counter", description = "Displays the total number of getTag(id, tagItemEntities) invocations that have occurred.")
     public Tag getTag(Integer id, List<TagItemEntity> tagItemEntities) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
-        if (tagEntity == null)
+        if (tagEntity == null) {
+            log.debug("getTag(id, tagItemEntities): could not find entity.");
             throw new NotFoundException();
+        }
 
         return TagConverter.toDto(tagEntity, tagItemEntities);
     }
@@ -99,8 +106,10 @@ public class TagBean {
     public Tag putTag(Integer id, Tag tag) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
-        if (tagEntity == null)
+        if (tagEntity == null) {
+            log.debug("putTag(id, tag): could not find entity.");
             throw new NotFoundException();
+        }
         TagEntity updatedTagEntity = TagConverter.toEntity(tag);
         TagConverter.completeTag(updatedTagEntity, tagEntity);
 
@@ -111,6 +120,7 @@ public class TagBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
+            log.warn("putTag(id, tag): could not persist entity.");
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -123,13 +133,17 @@ public class TagBean {
     public boolean deleteTag(Integer id) {
 
         TagEntity tagEntity = em.find(TagEntity.class, id);
-        if (tagEntity == null)
+        if (tagEntity == null) {
+            log.debug("deleteTag(id): could not find entity.");
             throw new NotFoundException();
+        }
 
         TypedQuery<TagItemEntity> query = em.createNamedQuery("TagItemEntity.getByTag", TagItemEntity.class);
         query.setParameter("tagId", id);
-        if(!query.getResultList().isEmpty())
+        if(!query.getResultList().isEmpty()) {
+            log.debug("deleteTag(id): did not remove entity due to existing relations.");
             return false;
+        }
 
         try {
             beginTx();
@@ -137,6 +151,7 @@ public class TagBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
+            log.warn("deleteTag(id): could not remove entity.");
             return false;
         }
 

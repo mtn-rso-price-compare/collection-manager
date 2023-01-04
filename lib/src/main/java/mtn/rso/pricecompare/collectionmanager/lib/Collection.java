@@ -12,7 +12,8 @@ public class Collection {
     private Integer userId;
     @Schema(example = "Priljubljeni izdelki")
     private String collectionName;
-    private List<Item> itemList;
+    private List<ItemDTO> itemList;
+    private List<Price> priceTotal;
 
     public Integer getCollectionId() {
         return collectionId;
@@ -38,11 +39,19 @@ public class Collection {
         this.collectionName = collectionName;
     }
 
-    public List<Item> getItemList() {
+    public List<ItemDTO> getItemList() {
         return itemList;
     }
 
-    public void setItemList(List<Item> itemList) {
+    public void setItemList(List<ItemDTO> itemList) {
         this.itemList = itemList;
+    }
+
+    public List<Price> getPriceTotal() {
+        return priceTotal;
+    }
+
+    public void setPriceTotal(List<Price> priceTotal) {
+        this.priceTotal = priceTotal;
     }
 }

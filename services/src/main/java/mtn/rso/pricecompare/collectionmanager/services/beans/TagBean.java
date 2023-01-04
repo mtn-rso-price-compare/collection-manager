@@ -5,12 +5,14 @@ import com.kumuluz.ee.logs.Logger;
 import com.kumuluz.ee.logs.cdi.Log;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
+import com.kumuluz.ee.rest.utils.QueryStringDefaults;
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
 import mtn.rso.pricecompare.collectionmanager.models.converters.TagConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 
 
 @Log
-@RequestScoped
+@ApplicationScoped
 public class TagBean {
 
     private final Logger log = LogManager.getLogger(TagBean.class.getName());
@@ -43,9 +45,9 @@ public class TagBean {
     @Counted(name = "tags_get_counter", description = "Displays the total number of getTag(uriInfo) invocations that have occurred.")
     public List<Tag> getTagFilter(UriInfo uriInfo) {
 
-        QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
-                .defaultOffset(0).build();
-        return JPAUtils.queryEntities(em, TagEntity.class, queryParameters).stream()
+        QueryStringDefaults qsd = new QueryStringDefaults().maxLimit(200).defaultLimit(40).defaultOffset(0);
+        QueryParameters query = qsd.builder().queryEncoded(uriInfo.getRequestUri().getRawQuery()).build();
+        return JPAUtils.queryEntities(em, TagEntity.class, query).stream()
                 .map(te -> TagConverter.toDto(te, null)).collect(Collectors.toList());
     }
 
@@ -65,7 +67,7 @@ public class TagBean {
         }
 
         if (tagEntity.getId() == null) {
-            log.warn("createTag(tag): could not persist entity.");
+            log.error("createTag(tag): could not persist entity.");
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -120,7 +122,7 @@ public class TagBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("putTag(id, tag): could not persist entity.");
+            log.error("putTag(id, tag): could not persist entity.", e);
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -151,7 +153,7 @@ public class TagBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("deleteTag(id): could not remove entity.");
+            log.error("deleteTag(id): could not remove entity.", e);
             return false;
         }
 

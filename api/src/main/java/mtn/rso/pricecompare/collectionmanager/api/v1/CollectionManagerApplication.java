@@ -18,7 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.servers.Server;
                         name = "Mihael Rajh",
                         email = "mr0017@student.uni-lj.si"
                 )
-        ), servers = {@Server(url = "http://localhost:8080/")},
+        ), servers = {@Server(url = "http://localhost:8081/")},
         externalDocs = @ExternalDocumentation(
                 url = "https://github.com/mtn-rso-price-compare/docs",
                 description = "Slovene documentation of the application that this API is a part of."

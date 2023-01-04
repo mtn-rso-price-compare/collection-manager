@@ -10,7 +10,7 @@ public class Tag {
     private Integer tagId;
     @Schema(example = "Meso in mesni izdelki")
     private String tagName;
-    private List<Item> itemList;
+    private List<ItemDTO> itemList;
 
     public Integer getTagId() {
         return tagId;
@@ -28,11 +28,11 @@ public class Tag {
         this.tagName = tagName;
     }
 
-    public List<Item> getItemList() {
+    public List<ItemDTO> getItemList() {
         return itemList;
     }
 
-    public void setItemList(List<Item> itemList) {
+    public void setItemList(List<ItemDTO> itemList) {
         this.itemList = itemList;
     }
 }

@@ -5,11 +5,15 @@ import com.kumuluz.ee.logs.Logger;
 import com.kumuluz.ee.logs.cdi.Log;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
+import com.kumuluz.ee.rest.utils.QueryStringDefaults;
+import mtn.rso.pricecompare.collectionmanager.models.converters.CollectionConverter;
+import mtn.rso.pricecompare.collectionmanager.models.converters.CollectionItemConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemKey;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -20,7 +24,7 @@ import java.util.List;
 
 
 @Log
-@RequestScoped
+@ApplicationScoped
 public class CollectionItemEntityBean {
 
     private final Logger log = LogManager.getLogger(CollectionItemEntityBean.class.getName());
@@ -40,9 +44,9 @@ public class CollectionItemEntityBean {
     @Counted(name = "collectionItems_get_counter", description = "Displays the total number of getCollectionItemEntity(uriInfo) invocations that have occurred.")
     public List<CollectionItemEntity> getCollectionItemEntityFilter(UriInfo uriInfo) {
 
-        QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
-                .defaultOffset(0).build();
-        return JPAUtils.queryEntities(em, CollectionItemEntity.class, queryParameters);
+        QueryStringDefaults qsd = new QueryStringDefaults().maxLimit(200).defaultLimit(40).defaultOffset(0);
+        QueryParameters query = qsd.builder().queryEncoded(uriInfo.getRequestUri().getRawQuery()).build();
+        return JPAUtils.queryEntities(em, CollectionItemEntity.class, query);
     }
 
     // GET by collectionId
@@ -56,16 +60,17 @@ public class CollectionItemEntityBean {
 
     // POST
     // NOTE: This method assumes that collectionItemEntity.getItemId() is a valid item ID
-    @Counted(name = "collectionItem_create_counter", description = "Displays the total number of createCollectionItemEntity(collectionId, itemId) invocations that have occurred.")
-    public CollectionItemEntity createCollectionItemEntity(Integer collectionId, Integer itemId) {
+    @Counted(name = "collectionItem_create_counter", description = "Displays the total number of createCollectionItemEntity(collectionId, itemId, amount) invocations that have occurred.")
+    public CollectionItemEntity createCollectionItemEntity(Integer collectionId, Integer itemId, Integer amount) {
 
         CollectionItemEntity collectionItemEntity = new CollectionItemEntity();
         collectionItemEntity.setCollectionId(collectionId);
         collectionItemEntity.setItemId(itemId);
+        collectionItemEntity.setAmount(amount);
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, collectionItemEntity.getCollectionId());
         if (collectionEntity == null) {
-            log.debug("createCollectionItemEntity(collectionId, itemId): did not create entity due to missing relations.");
+            log.debug("createCollectionItemEntity(collectionId, itemId, amount): did not create entity due to missing relations.");
             throw new NotFoundException();
         }
 
@@ -76,7 +81,7 @@ public class CollectionItemEntityBean {
         }
         catch (Exception e) {
             rollbackTx();
-            log.warn("createCollectionItemEntity(collectionId, itemId): could not persist entity.");
+            log.error("createCollectionItemEntity(collectionId, itemId, amount): could not persist entity.", e);
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -96,6 +101,37 @@ public class CollectionItemEntityBean {
         return collectionItemEntity;
     }
 
+    // PUT
+    // NOTE: This method assumes that itemId is a valid item ID
+    @Counted(name = "collectionItem_put_counter", description = "Displays the total number of putCollectionItemEntity(collectionId, itemId, amount) invocations that have occurred.")
+    public CollectionItemEntity putCollectionItemEntity(Integer collectionId, Integer itemId, Integer amount) {
+
+        CollectionItemEntity collectionItemEntity = em.find(CollectionItemEntity.class,
+                new CollectionItemKey(collectionId, itemId));
+        if (collectionItemEntity == null) {
+            log.debug("putCollectionItemEntity(collectionId, itemId, amount): could not find entity.");
+            throw new NotFoundException();
+        }
+
+        CollectionItemEntity updatedCollectionItemEntity = new CollectionItemEntity();
+        updatedCollectionItemEntity.setCollectionId(collectionId);
+        updatedCollectionItemEntity.setItemId(itemId);
+        updatedCollectionItemEntity.setAmount(amount);
+
+        try {
+            beginTx();
+            updatedCollectionItemEntity = em.merge(updatedCollectionItemEntity);
+            commitTx();
+        }
+        catch (Exception e) {
+            rollbackTx();
+            log.error("putCollectionItemEntity(collectionId, itemId, amount): could not persist entity.", e);
+            throw new RuntimeException("Entity was not persisted");
+        }
+
+        return updatedCollectionItemEntity;
+    }
+
     // DELETE by id
     @Counted(name = "collectionItem_delete_counter", description = "Displays the total number of deleteCollectionItemEntity(collectionItemKey) invocations that have occurred.")
     public boolean deleteCollectionItemEntity(CollectionItemKey collectionItemKey) {
@@ -112,7 +148,7 @@ public class CollectionItemEntityBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("deleteCollectionItemEntity(collectionItemKey): could not remove entity.");
+            log.error("deleteCollectionItemEntity(collectionItemKey): could not remove entity.", e);
             return false;
         }
 

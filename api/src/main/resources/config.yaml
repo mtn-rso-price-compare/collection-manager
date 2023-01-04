@@ -4,12 +4,12 @@ kumuluzee:
     name: dev
   version: 1.0.0
   server:
-    base-url: http://localhost:8080
+    base-url: http://localhost:8081
     http:
-      port: 8080
+      port: 8081
   datasources:
     - jndi-name: jdbc/CollectionManagerDS
-      connection-url: jdbc:postgresql://host.docker.internal:5432/collection-manager
+      connection-url: jdbc:postgresql://host.docker.internal:5433/collection-manager
       username: dbuser
       password: postgres
       max-pool-size: 20
@@ -21,6 +21,9 @@ kumuluzee:
     ui:
       enabled: true
       mapping: /openapi/ui
+  config:
+    consul:
+      agent: http://host.docker.internal:8500
   metrics:
     servlet:
       enabled: true
@@ -39,13 +42,24 @@ kumuluzee:
                                 <Console name="console" target="SYSTEM_OUT">
                                     <PatternLayout pattern="%d %p %marker %m %X %ex %n"/>
                                 </Console>
+                                <Socket name="logstash" host="3a68956d-0567-4cd2-8ad3-bfda5f432292-ls.logit.io" port="23732" protocol="udp">
+                                    <JSONLayout complete="false" compact="true" eventEol="true" charset="UTF-8" properties="true"/>
+                                </Socket>
                             </Appenders>
                             <Loggers>
                                 <!-- Default logger -->
-                                <Logger name="mtn.rso.pricecompare.collectionmanager" level="TRACE"/>
+                                <Logger name="mtn.rso.pricecompare.collectionmanager" level="trace"/>
                                 <Root level="info">
                                     <AppenderRef ref="console" level="trace" />
                                     <AppenderRef ref="logstash" level="trace" />
                                 </Root>
                             </Loggers>
                         </Configuration>'
+
+api-properties:
+  verify-item-exists: true
+  return-collection-item-information: true
+
+client-properties:
+  price-updater-host: host.docker.internal
+  price-updater-port: 8080

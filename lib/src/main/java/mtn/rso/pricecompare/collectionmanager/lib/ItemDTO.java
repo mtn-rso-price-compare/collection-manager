@@ -4,12 +4,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
 
-public class Item {
+public class ItemDTO {
 
     @Schema(example = "1")
     private Integer itemId;
     @Schema(example = "piščančje prsi")
     private String itemName;
+    @Schema(example = "2")
+    private Integer amount;
     private List<Price> priceList;
 
     public Integer getItemId() {
@@ -26,6 +28,14 @@ public class Item {
 
     public void setItemName(String itemName) {
         this.itemName = itemName;
+    }
+
+    public Integer getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Integer amount) {
+        this.amount = amount;
     }
 
     public List<Price> getPriceList() {

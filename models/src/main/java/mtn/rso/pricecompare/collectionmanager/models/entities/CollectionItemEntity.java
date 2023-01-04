@@ -21,6 +21,9 @@ public class CollectionItemEntity {
     @Column(name = "item_id")
     private Integer itemId;
 
+    @Column(name = "amount")
+    private Integer amount;
+
     public Integer getCollectionId() {
         return collectionId;
     }
@@ -35,5 +38,13 @@ public class CollectionItemEntity {
 
     public void setItemId(Integer itemId) {
         this.itemId = itemId;
+    }
+
+    public Integer getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Integer amount) {
+        this.amount = amount;
     }
 }

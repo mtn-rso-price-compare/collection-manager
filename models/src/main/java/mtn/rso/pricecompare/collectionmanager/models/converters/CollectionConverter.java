@@ -15,9 +15,12 @@ public class CollectionConverter {
         dto.setCollectionId(entity.getId());
         dto.setUserId(entity.getUserId());
         dto.setCollectionName(entity.getName());
-        if(collectionItemEntities != null)
+        // If collection is locked, do not set amounts
+        if(collectionItemEntities != null) {
             dto.setItemList(collectionItemEntities.stream()
-                .map(CollectionItemConverter::toDto).collect(Collectors.toList()));
+                    .map(cie -> CollectionItemConverter.toDto(cie, !entity.getLocked()))
+                    .collect(Collectors.toList()));
+        }
         return dto;
     }
 
@@ -26,14 +29,18 @@ public class CollectionConverter {
         CollectionEntity entity = new CollectionEntity();
         entity.setUserId(dto.getUserId());
         entity.setName(dto.getCollectionName());
+        entity.setLocked(false);
         return entity;
     }
 
     public static void completeEntity(CollectionEntity partialEntity, CollectionEntity fullEntity) {
+
         if(partialEntity.getUserId() == null)
             partialEntity.setUserId(fullEntity.getUserId());
         if(partialEntity.getName() == null)
             partialEntity.setName(fullEntity.getName());
+        if(partialEntity.getLocked() == null)
+            partialEntity.setLocked(fullEntity.getLocked());
     }
 
 }

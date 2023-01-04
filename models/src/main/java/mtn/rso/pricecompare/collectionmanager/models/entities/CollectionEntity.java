@@ -21,6 +21,9 @@ public class CollectionEntity {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "is_locked")
+    private Boolean isLocked;
+
     public Integer getId() {
         return id;
     }
@@ -45,4 +48,11 @@ public class CollectionEntity {
         this.name = name;
     }
 
+    public Boolean getLocked() {
+        return isLocked;
+    }
+
+    public void setLocked(Boolean locked) {
+        isLocked = locked;
+    }
 }

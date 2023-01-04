@@ -1,13 +1,13 @@
 package mtn.rso.pricecompare.collectionmanager.models.converters;
 
-import mtn.rso.pricecompare.collectionmanager.lib.Item;
+import mtn.rso.pricecompare.collectionmanager.lib.ItemDTO;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
 
 public class TagItemConverter {
 
-    public static Item toDto(TagItemEntity tagItemEntity) {
+    public static ItemDTO toDto(TagItemEntity tagItemEntity) {
 
-        Item item = new Item();
+        ItemDTO item = new ItemDTO();
         item.setItemId(tagItemEntity.getItemId());
         return item;
     }

@@ -1,12 +1,15 @@
 package mtn.rso.pricecompare.collectionmanager.api.v1.resources;
 
+import com.kumuluz.ee.logs.LogManager;
+import com.kumuluz.ee.logs.Logger;
 import com.kumuluz.ee.logs.cdi.Log;
-import mtn.rso.pricecompare.collectionmanager.lib.Item;
+import mtn.rso.pricecompare.collectionmanager.lib.ItemDTO;
 import mtn.rso.pricecompare.collectionmanager.lib.Tag;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemKey;
 import mtn.rso.pricecompare.collectionmanager.services.beans.TagBean;
 import mtn.rso.pricecompare.collectionmanager.services.beans.TagItemEntityBean;
+import mtn.rso.pricecompare.collectionmanager.services.clients.PriceUpdaterClient;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
@@ -25,6 +28,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.concurrent.*;
 
 
 @Log
@@ -40,8 +44,15 @@ public class TagResource {
     @Inject
     private TagItemEntityBean tagItemEntityBean;
 
+    @Inject
+    private PriceUpdaterClient priceUpdaterClient;
+
     @Context
     protected UriInfo uriInfo;
+
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
+
+    private final Logger log = LogManager.getLogger(TagResource.class.getName());
 
     @Operation(description = "Get a list of all tags in the database.", summary = "Get all tags")
     @APIResponses({
@@ -238,34 +249,68 @@ public class TagResource {
     })
     @POST
     @Path("{tagId}")
-    public Response createTagItem(@RequestBody(description = "Item DTO (itemId only)", required = true,
-            content = @Content(schema = @Schema(implementation = Item.class))) Item item,
-                                  @Parameter(name = "tag ID", required = true)
-                                  @PathParam("tagId") Integer tagId) {
+    public CompletionStage<Response> createTagItem(@RequestBody(description = "Item DTO (itemId only)",
+            required = true, content = @Content(schema = @Schema(implementation = ItemDTO.class))) ItemDTO item,
+                                                   @Parameter(name = "tag ID", required = true)
+                                                   @PathParam("tagId") Integer tagId) {
 
-        if(item == null || item.getItemId() == null)
-            return Response.status(Response.Status.BAD_REQUEST).build();
-
-        // TODO: Lookup itemId in price ms
-
-        boolean resourceExists = true;
-        try {
-            tagItemEntityBean.getTagItemEntity(new TagItemKey(tagId, item.getItemId()));
-        } catch (NotFoundException e) {
-            resourceExists = false;
-        }
-        if(resourceExists)
-            return Response.status(Response.Status.CONFLICT).build();
-
-        try {
-            tagItemEntityBean.createTagItemEntity(tagId, item.getItemId());
-        } catch (NotFoundException e) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        } catch (RuntimeException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+        // Create new async response, check that itemId is provided and create async request to price updater
+        CompletableFuture<Response> asyncResponse = new CompletableFuture<>();
+        if(item == null || item.getItemId() == null) {
+            asyncResponse.complete(Response.status(Response.Status.BAD_REQUEST).build());
+            return asyncResponse;
         }
 
-        return Response.status(Response.Status.NO_CONTENT).build();
+        Future<Response> updaterRequest = priceUpdaterClient.getItemRequest(item.getItemId(), false).async().get();
+
+
+        executor.execute( () -> {
+            // Asynchronously check if item is already in collection; if so, return CONFLICT
+            boolean resourceExists = true;
+            try {
+                tagItemEntityBean.getTagItemEntity(new TagItemKey(tagId, item.getItemId()));
+            } catch (NotFoundException e) {
+                resourceExists = false;
+            }
+            if (resourceExists) {
+                asyncResponse.complete(Response.status(Response.Status.CONFLICT).build());
+                return;
+            }
+
+            try {
+                // Try to retrieve response from price updater and check its status
+                Response updaterResponse = updaterRequest.get();
+                switch (updaterResponse.getStatus()) {
+                    // If status is OK, try to add item to collection
+                    case 200 -> {
+                        try {
+                            tagItemEntityBean.createTagItemEntity(tagId, item.getItemId());
+                        } catch (NotFoundException e) {
+                            asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+                            return;
+                        } catch (RuntimeException e) {
+                            asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+                            return;
+                        }
+                        asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
+                    }
+                    // If status is NOT FOUND, return this status
+                    case 404 -> asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+                    // If status is something else, return generic error
+                    default -> {
+                        log.error("createCollectionItem(item, collectionId): unexpected response from price-updater.");
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+                    }
+                }
+            } catch(Exception e) {
+                // In case response cannot be retrieved, return generic error
+                log.error("createCollectionItem(item, collectionId): could not get response from price-updater.", e);
+                asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+            }
+
+        });
+
+        return asyncResponse;
     }
 
     @Operation(description = "Remove a tag from an item.", summary = "Untag an item")

@@ -5,9 +5,11 @@ import com.kumuluz.ee.logs.Logger;
 import com.kumuluz.ee.logs.cdi.Log;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
+import com.kumuluz.ee.rest.utils.QueryStringDefaults;
 import mtn.rso.pricecompare.collectionmanager.models.entities.*;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -18,7 +20,7 @@ import java.util.List;
 
 
 @Log
-@RequestScoped
+@ApplicationScoped
 public class TagItemEntityBean {
 
     private final Logger log = LogManager.getLogger(TagItemEntityBean.class.getName());
@@ -38,9 +40,9 @@ public class TagItemEntityBean {
     @Counted(name = "tagItems_get_counter", description = "Displays the total number of getTagItemEntity(uriInfo) invocations that have occurred.")
     public List<TagItemEntity> getTagItemEntityFilter(UriInfo uriInfo) {
 
-        QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
-                .defaultOffset(0).build();
-        return JPAUtils.queryEntities(em, TagItemEntity.class, queryParameters);
+        QueryStringDefaults qsd = new QueryStringDefaults().maxLimit(200).defaultLimit(40).defaultOffset(0);
+        QueryParameters query = qsd.builder().queryEncoded(uriInfo.getRequestUri().getRawQuery()).build();
+        return JPAUtils.queryEntities(em, TagItemEntity.class, query);
     }
 
     // GET by tagId
@@ -74,7 +76,7 @@ public class TagItemEntityBean {
         }
         catch (Exception e) {
             rollbackTx();
-            log.warn("createTagItemEntity(tagId, itemId): could not persist entity.");
+            log.error("createTagItemEntity(tagId, itemId): could not persist entity.", e);
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -110,7 +112,7 @@ public class TagItemEntityBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("deleteTagItemEntity(tagItemKey): could not remove entity.");
+            log.error("deleteTagItemEntity(tagItemKey): could not remove entity.", e);
             return false;
         }
 

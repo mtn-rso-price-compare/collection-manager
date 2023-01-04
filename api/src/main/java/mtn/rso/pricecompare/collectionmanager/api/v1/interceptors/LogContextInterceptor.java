@@ -3,6 +3,7 @@ package mtn.rso.pricecompare.collectionmanager.api.v1.interceptors;
 import com.kumuluz.ee.common.runtime.EeRuntime;
 import com.kumuluz.ee.logs.cdi.Log;
 import org.apache.logging.log4j.CloseableThreadContext;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.util.UuidUtil;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -29,7 +30,8 @@ public class LogContextInterceptor {
         logContext.put("applicationVersion", config.getValue("kumuluzee.version", String.class));
         logContext.put("environmentType", config.getValue("kumuluzee.env.name", String.class));
         logContext.put("uniqueInstanceId", EeRuntime.getInstance().getInstanceId());
-        logContext.put("uniqueRequestId", UuidUtil.getTimeBasedUuid().toString());
+        if(!ThreadContext.containsKey("uniqueRequestId"))
+            logContext.put("uniqueRequestId", UuidUtil.getTimeBasedUuid().toString());
 
         try (final CloseableThreadContext.Instance ignored = CloseableThreadContext.putAll(logContext)) {
             return context.proceed();

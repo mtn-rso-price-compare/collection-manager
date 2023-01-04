@@ -5,12 +5,14 @@ import com.kumuluz.ee.logs.Logger;
 import com.kumuluz.ee.logs.cdi.Log;
 import com.kumuluz.ee.rest.beans.QueryParameters;
 import com.kumuluz.ee.rest.utils.JPAUtils;
+import com.kumuluz.ee.rest.utils.QueryStringDefaults;
 import mtn.rso.pricecompare.collectionmanager.lib.Collection;
 import mtn.rso.pricecompare.collectionmanager.models.converters.CollectionConverter;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionEntity;
 import mtn.rso.pricecompare.collectionmanager.models.entities.CollectionItemEntity;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 
 
 @Log
-@RequestScoped
+@ApplicationScoped
 public class CollectionBean {
 
     private final Logger log = LogManager.getLogger(CollectionBean.class.getName());
@@ -44,9 +46,9 @@ public class CollectionBean {
     @Counted(name = "collections_get_counter", description = "Displays the total number of getCollection(uriInfo) invocations that have occurred.")
     public List<Collection> getCollectionFilter(UriInfo uriInfo) {
 
-        QueryParameters queryParameters = QueryParameters.query(uriInfo.getRequestUri().getQuery())
-                .defaultOffset(0).build();
-        return JPAUtils.queryEntities(em, CollectionEntity.class, queryParameters).stream()
+        QueryStringDefaults qsd = new QueryStringDefaults().maxLimit(200).defaultLimit(40).defaultOffset(0);
+        QueryParameters query = qsd.builder().queryEncoded(uriInfo.getRequestUri().getRawQuery()).build();
+        return JPAUtils.queryEntities(em, CollectionEntity.class, query).stream()
                 .map(ce -> CollectionConverter.toDto(ce, null)).collect(Collectors.toList());
     }
 
@@ -66,7 +68,7 @@ public class CollectionBean {
         }
 
         if (collectionEntity.getId() == null) {
-            log.warn("createCollection(collection): could not persist entity.");
+            log.error("createCollection(collection): could not persist entity.");
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -101,16 +103,35 @@ public class CollectionBean {
         return CollectionConverter.toDto(collectionEntity, collectionItemEntities);
     }
 
+    // Checks if collection is locked for modification
+    @Counted(name = "collection_is_locked_counter", description = "Displays the total number of isCollectionLocked(id) invocations that have occurred.")
+    public Boolean isCollectionLocked(Integer id) {
+
+        CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
+        if (collectionEntity == null) {
+            log.debug("getCollection(id, collectionItemEntities): could not find entity.");
+            throw new NotFoundException();
+        }
+
+        return collectionEntity.getLocked();
+    }
+
     // PUT by id
     // NOTE: Does not update collection item entities if included. Use CollectionItemEntityBean to persist those.
     @Counted(name = "collection_put_counter", description = "Displays the total number of putCollection(id, collection) invocations that have occurred.")
     public Collection putCollection(Integer id, Collection collection) {
 
         CollectionEntity collectionEntity = em.find(CollectionEntity.class, id);
-        if (collectionEntity == null) {
+        if(collectionEntity == null) {
             log.debug("putCollection(id, collection): could not find entity.");
             throw new NotFoundException();
         }
+
+        if(collectionEntity.getLocked()) {
+            log.debug("putCollection(id, collection): did not modify locked collection.");
+            return null;
+        }
+
         CollectionEntity updatedCollectionEntity = CollectionConverter.toEntity(collection);
         CollectionConverter.completeEntity(updatedCollectionEntity, collectionEntity);
 
@@ -121,7 +142,7 @@ public class CollectionBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("putCollection(id, collection): could not persist entity.");
+            log.error("putCollection(id, collection): could not persist entity.", e);
             throw new RuntimeException("Entity was not persisted");
         }
 
@@ -139,6 +160,11 @@ public class CollectionBean {
             throw new NotFoundException();
         }
 
+        if(collectionEntity.getLocked()) {
+            log.debug("deleteCollection(id): did not delete locked collection.");
+            return false;
+        }
+
         TypedQuery<CollectionItemEntity> query = em.createNamedQuery("CollectionItemEntity.getByCollection", CollectionItemEntity.class);
         query.setParameter("collectionId", id);
         if(!query.getResultList().isEmpty()) {
@@ -152,7 +178,7 @@ public class CollectionBean {
             commitTx();
         } catch (Exception e) {
             rollbackTx();
-            log.warn("deleteCollection(id): could not remove entity.");
+            log.error("deleteCollection(id): could not remove entity.", e);
             return false;
         }
 

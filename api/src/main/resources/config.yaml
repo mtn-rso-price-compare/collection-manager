@@ -24,6 +24,11 @@ kumuluzee:
   config:
     consul:
       agent: http://host.docker.internal:8500
+  health:
+    checks:
+      data-source-health-check:
+        type: liveness
+        jndi-name: jdbc/CollectionManagerDS
   metrics:
     servlet:
       enabled: true
@@ -55,6 +60,10 @@ kumuluzee:
                                 </Root>
                             </Loggers>
                         </Configuration>'
+
+global-properties:
+  app-liveness: true
+  app-readiness: true
 
 api-properties:
   verify-item-exists: true

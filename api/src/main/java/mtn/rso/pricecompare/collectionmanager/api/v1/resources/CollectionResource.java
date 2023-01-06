@@ -12,6 +12,7 @@ import mtn.rso.pricecompare.collectionmanager.services.beans.CollectionBean;
 import mtn.rso.pricecompare.collectionmanager.services.beans.CollectionItemEntityBean;
 import mtn.rso.pricecompare.collectionmanager.services.clients.PriceUpdaterClient;
 import mtn.rso.pricecompare.collectionmanager.services.config.ApiProperties;
+import org.apache.logging.log4j.ThreadContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
@@ -129,9 +130,9 @@ public class CollectionResource {
     @GET
     @Path("/{collectionId}")
     public CompletionStage<Response> getCollection(@Parameter(name = "collection ID", required = true)
-                                                       @PathParam("collectionId") Integer collectionId,
+                                                   @PathParam("collectionId") Integer collectionId,
                                                    @Parameter(name = "returnPrice",
-                                        description = "Determines if information for items should be returned.")
+                                                           description = "Determines if information for items should be returned.")
                                                    @QueryParam("returnItemInfo") boolean returnItemInfo) {
 
         // Create new async response, check that itemId is provided and create async request to price updater
@@ -155,64 +156,99 @@ public class CollectionResource {
             return asyncResponse;
         }
 
-        HashMap<Integer, Future<Response>> updaterRequests = new HashMap<>();
-        for(ItemDTO item : collection.getItemList())
-            updaterRequests.put(item.getItemId(),
-                    priceUpdaterClient.getItemRequest(item.getItemId(), true).async().get());
-
         collection.setPriceTotal(new ArrayList<>());
         HashMap<Integer, Price> totalPrices = new HashMap<>();
+        ExecutorCompletionService<Void> executorCompletionService = new ExecutorCompletionService<>(executor);
 
-        executor.execute( () -> {
-            for(ItemDTO item : collection.getItemList()) {
-                if(updaterRequests.containsKey(item.getItemId())) {
-                    try {
-                        // Try to retrieve response from price updater and check its status
-                        Response updaterResponse = updaterRequests.get(item.getItemId()).get();
-                        switch (updaterResponse.getStatus()) {
-                            case 200 -> {
-                                ItemDTO receivedItem = updaterResponse.readEntity(ItemDTO.class);
-                                item.setItemName(receivedItem.getItemName());
-                                item.setPriceList(receivedItem.getPriceList());
-                                if(item.getAmount() != null && item.getAmount() > 0) {
-                                    for (Price price : receivedItem.getPriceList()) {
-                                        if (!totalPrices.containsKey(price.getStoreId())) {
-                                            Price newTotalPrice = new Price();
-                                            newTotalPrice.setStoreId(price.getStoreId());
-                                            newTotalPrice.setAmount(price.getAmount() * item.getAmount());
-                                            collection.getPriceTotal().add(newTotalPrice);
-                                            totalPrices.put(price.getStoreId(), newTotalPrice);
-                                        } else {
-                                            Price totalPrice = totalPrices.get(price.getStoreId());
-                                            totalPrice.setAmount(totalPrice.getAmount() +
-                                                    price.getAmount() * item.getAmount());
-                                        }
-                                    }
-                                }
+        String uniqueRequestId = null;
+        if(ThreadContext.containsKey("uniqueRequestId"))
+            uniqueRequestId = ThreadContext.get("uniqueRequestId");
+
+        for(ItemDTO item : collection.getItemList()) {
+            CompletableFuture<ItemDTO> itemDTO = priceUpdaterClient
+                    .getItem(item.getItemId(), true, uniqueRequestId, executor).toCompletableFuture();
+
+            // We submit tasks to a completion service wrapper, which can track the number of completed tasks
+            executorCompletionService.submit( () -> {
+
+                try {
+                    // Get HTTP response and set item information
+                    ItemDTO receivedItem = itemDTO.get();
+                    item.setItemName(receivedItem.getItemName());
+                    item.setPriceList(receivedItem.getPriceList());
+                    if(item.getAmount() != null && item.getAmount() > 0) {
+                        for (Price price : receivedItem.getPriceList()) {
+                            if (!totalPrices.containsKey(price.getStoreId())) {
+                                Price newTotalPrice = new Price();
+                                newTotalPrice.setStoreId(price.getStoreId());
+                                newTotalPrice.setAmount(price.getAmount() * item.getAmount());
+                                collection.getPriceTotal().add(newTotalPrice);
+                                totalPrices.put(price.getStoreId(), newTotalPrice);
+                            } else {
+                                Price totalPrice = totalPrices.get(price.getStoreId());
+                                totalPrice.setAmount(totalPrice.getAmount() +
+                                        price.getAmount() * item.getAmount());
                             }
-                            case 404 -> log.error(String.format("getCollection(collectionId, returnPrice): " +
-                                            "price-updater could not find item (itemId=%d). " +
-                                            "Continuing without this item's prices.",
-                                    item.getItemId()));
-                            default -> log.error(String.format("getCollection(collectionId, returnPrice): " +
-                                            "unexpected response from price-updater (itemId=%d). " +
-                                            "Continuing without this item's prices.",
-                                    item.getItemId()));
                         }
-
-                    } catch (Exception e) {
-                        log.error(String.format("getCollection(collectionId, returnPrice): could not get response from " +
-                                "price-updater (itemId=%d). Continuing without this item's prices.", item.getItemId()), e);
                     }
+
+                } catch (ExecutionException e) {
+
+                    if(e.getCause() instanceof NotFoundException) // If price-updater cannot find item
+                        log.error(String.format("getCollection(collectionId, returnItemInfo): " +
+                                "price-updater could not find item (itemId=%d). " +
+                                "Continuing without this item's prices.", item.getItemId()));
+
+                    else if(e.getCause() instanceof WebApplicationException) // If HTTP request returned unusual status
+                        log.error(String.format("getCollection(collectionId, returnPrice): " +
+                                "unexpected response from price-updater (itemId=%d). " +
+                                "Continuing without this item's prices.", item.getItemId()), e.getCause());
+
+                    else if (e.getCause() instanceof ProcessingException) {
+                        log.error(String.format("getCollection(collectionId, returnPrice): " +
+                                "fallback triggered when querying price-updater (itemId=%d). " +
+                                "Continuing without this item's prices.", item.getItemId()), e.getCause());
+
+                    } else // Something else happened
+                        log.error(String.format("getCollection(collectionId, returnPrice): " +
+                                "unexpected HTTP client exception (itemId=%d). " +
+                                "Continuing without this item's prices.", item.getItemId()), e.getCause());
+
+                } catch (InterruptedException e) {
+                    // Thread was interrupted
+                    log.error(String.format("getCollection(collectionId, returnPrice): experienced thread interruption " +
+                            "while asynchronously querying price-updater (itemId=%d). " +
+                            "Continuing without this item's prices.", item.getItemId()), e);
+                }
+
+                return null;
+            });
+
+        }
+
+        executor.submit(() -> {
+
+            // This code block waits for all submitted tasks to complete
+            for(ItemDTO item : collection.getItemList()) {
+                try {
+                    executorCompletionService.take();
+
+                } catch (InterruptedException e) {
+                    // Thread was interrupted
+                    log.error(String.format("getCollection(collectionId, returnPrice): experienced thread interruption " +
+                            "in ExecutorCompletionService while querying price-updater (itemId=%d). " +
+                            "Continuing without this item's prices.", item.getItemId()), e);
                 }
             }
 
+            // Then checks if priceTotal has any values and submits response
             if(collection.getPriceTotal().isEmpty())
                 collection.setPriceTotal(null);
             asyncResponse.complete(Response.status(Response.Status.OK).entity(collection).build());
         });
 
         return asyncResponse;
+
     }
 
     @Operation(description = "Update information about a collection.", summary = "Update collection")
@@ -285,11 +321,11 @@ public class CollectionResource {
     @DELETE
     @Path("{collectionId}")
     public Response deleteCollection(@Parameter(name = "collection ID", required = true)
-                                         @PathParam("collectionId") Integer collectionId) {
+                                     @PathParam("collectionId") Integer collectionId) {
 
         try {
-           if(collectionBean.isCollectionLocked(collectionId))
-               return Response.status(Response.Status.METHOD_NOT_ALLOWED).build();
+            if(collectionBean.isCollectionLocked(collectionId))
+                return Response.status(Response.Status.METHOD_NOT_ALLOWED).build();
         } catch (NotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -376,56 +412,70 @@ public class CollectionResource {
         }
 
         if(apiProperties.getVerifyItemExists()) {
-            // create async request to price updater
-            Future<Response> updaterRequest = priceUpdaterClient.getItemRequest(item.getItemId(), false).async().get();
+            String uniqueRequestId = null;
+            if(ThreadContext.containsKey("uniqueRequestId"))
+                uniqueRequestId = ThreadContext.get("uniqueRequestId");
+
+            CompletableFuture<ItemDTO> itemDTO = priceUpdaterClient
+                    .getItem(item.getItemId(), false, uniqueRequestId, executor).toCompletableFuture();
 
             executor.execute( () -> {
-                // Asynchronously check if item is already in collection; if so, return CONFLICT
                 try {
-                    // Try to retrieve response from price updater and check its status
-                    Response updaterResponse = updaterRequest.get();
-                    switch (updaterResponse.getStatus()) {
-                        // If status is OK, try to add item to collection
-                        case 200 -> {
-                            try {
-                                collectionItemEntityBean.createCollectionItemEntity(collectionId, item.getItemId(), item.getAmount());
-                            } catch (NotFoundException e) {
-                                asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
-                                return;
-                            } catch (RuntimeException e) {
-                                asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-                                return;
-                            }
-                            asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
-                        }
-                        // If status is NOT FOUND, return this status
-                        case 404 -> asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
-                        // If status is something else, return generic error
-                        default -> {
-                            log.error("createCollectionItem(item, collectionId): unexpected response from price-updater.");
-                            asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-                        }
+                    // Get HTTP response and complete database operations
+                    ItemDTO ignored = itemDTO.get();
+                    collectionItemEntityBean.createCollectionItemEntity(collectionId, item.getItemId(), item.getAmount());
+                    asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
+
+                } catch (NotFoundException e) {
+                    // If tagItemEntityBean cannot find tag
+                    asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+
+                } catch (RuntimeException e) {
+                    // If tagItemEntityBean cannot persist entity
+                    asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                } catch (ExecutionException e) {
+
+                    if (e.getCause() instanceof NotFoundException) // If price-updater cannot find item
+                        asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+
+                    else if (e.getCause() instanceof WebApplicationException) {
+                        // If HTTP request returned unusual status
+                        log.error("createCollectionItem(item, collectionId): " +
+                                "unexpected response from price-updater.", e.getCause());
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                    } else if (e.getCause() instanceof ProcessingException) {
+                        // If fallback mechanism triggered
+                        log.error("createCollectionItem(item, collectionId): " +
+                                "fallback triggered when querying price-updater.", e.getCause());
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                    } else {
+                        // Something else happened
+                        log.error("createCollectionItem(item, collectionId): unexpected HTTP client exception.", e.getCause());
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
                     }
-                } catch(Exception e) {
-                    // In case response cannot be retrieved, return generic error
-                    log.error("createCollectionItem(item, collectionId): could not get response from price-updater.", e);
+
+                } catch (InterruptedException e) {
+                    // Thread was interrupted
+                    log.error("createCollectionItem(item, collectionId): unexpected HTTP client exception.", e);
                     asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
                 }
+
             });
 
         } else {
             // Just persist collection item
             try {
                 collectionItemEntityBean.createCollectionItemEntity(collectionId, item.getItemId(), item.getAmount());
+                asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
             } catch (NotFoundException e) {
                 asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
-                return asyncResponse;
             } catch (RuntimeException e) {
                 asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-                return asyncResponse;
             }
 
-            asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
         }
 
         return asyncResponse;
@@ -457,7 +507,7 @@ public class CollectionResource {
                                       @Parameter(name = "collection ID", required = true)
                                       @PathParam("collectionId") Integer collectionId,
                                       @Parameter(name = "item ID", required = true)
-                                          @PathParam("itemId") Integer itemId) {
+                                      @PathParam("itemId") Integer itemId) {
 
         if(itemDTO == null || itemDTO.getAmount() == null || itemDTO.getAmount() < 1)
             return Response.status(Response.Status.BAD_REQUEST).build();
@@ -491,7 +541,7 @@ public class CollectionResource {
     @DELETE
     @Path("{collectionId}/{itemId}")
     public Response deleteCollectionItem(@Parameter(name = "collection ID", required = true)
-                                             @PathParam("collectionId") Integer collectionId,
+                                         @PathParam("collectionId") Integer collectionId,
                                          @Parameter(name = "item ID", required = true)
                                          @PathParam("itemId") Integer itemId) {
 

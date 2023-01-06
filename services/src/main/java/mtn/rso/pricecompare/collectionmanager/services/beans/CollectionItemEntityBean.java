@@ -68,7 +68,7 @@ public class CollectionItemEntityBean {
         collectionItemEntity.setItemId(itemId);
         collectionItemEntity.setAmount(amount);
 
-        CollectionEntity collectionEntity = em.find(CollectionEntity.class, collectionItemEntity.getCollectionId());
+        CollectionEntity collectionEntity = em.find(CollectionEntity.class, collectionId);
         if (collectionEntity == null) {
             log.debug("createCollectionItemEntity(collectionId, itemId, amount): did not create entity due to missing relations.");
             throw new NotFoundException();

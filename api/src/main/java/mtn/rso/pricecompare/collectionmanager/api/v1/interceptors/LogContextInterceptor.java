@@ -30,8 +30,6 @@ public class LogContextInterceptor {
         logContext.put("applicationVersion", config.getValue("kumuluzee.version", String.class));
         logContext.put("environmentType", config.getValue("kumuluzee.env.name", String.class));
         logContext.put("uniqueInstanceId", EeRuntime.getInstance().getInstanceId());
-        if(!ThreadContext.containsKey("uniqueRequestId"))
-            logContext.put("uniqueRequestId", UuidUtil.getTimeBasedUuid().toString());
 
         try (final CloseableThreadContext.Instance ignored = CloseableThreadContext.putAll(logContext)) {
             return context.proceed();

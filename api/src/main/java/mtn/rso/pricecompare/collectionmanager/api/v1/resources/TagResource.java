@@ -10,6 +10,8 @@ import mtn.rso.pricecompare.collectionmanager.models.entities.TagItemKey;
 import mtn.rso.pricecompare.collectionmanager.services.beans.TagBean;
 import mtn.rso.pricecompare.collectionmanager.services.beans.TagItemEntityBean;
 import mtn.rso.pricecompare.collectionmanager.services.clients.PriceUpdaterClient;
+import mtn.rso.pricecompare.collectionmanager.services.config.ApiProperties;
+import org.apache.logging.log4j.ThreadContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
@@ -46,6 +48,9 @@ public class TagResource {
 
     @Inject
     private PriceUpdaterClient priceUpdaterClient;
+
+    @Inject
+    private ApiProperties apiProperties;
 
     @Context
     protected UriInfo uriInfo;
@@ -261,54 +266,83 @@ public class TagResource {
             return asyncResponse;
         }
 
-        Future<Response> updaterRequest = priceUpdaterClient.getItemRequest(item.getItemId(), false).async().get();
+        // Check that item is not already added
+        boolean resourceExists = true;
+        try {
+            tagItemEntityBean.getTagItemEntity(new TagItemKey(tagId, item.getItemId()));
+        } catch (NotFoundException e) {
+            resourceExists = false;
+        }
+        if (resourceExists) {
+            asyncResponse.complete(Response.status(Response.Status.CONFLICT).build());
+            return asyncResponse;
+        }
 
+        if(apiProperties.getVerifyItemExists()) {
+            String uniqueRequestId = null;
+            if(ThreadContext.containsKey("uniqueRequestId"))
+                uniqueRequestId = ThreadContext.get("uniqueRequestId");
 
-        executor.execute( () -> {
-            // Asynchronously check if item is already in collection; if so, return CONFLICT
-            boolean resourceExists = true;
-            try {
-                tagItemEntityBean.getTagItemEntity(new TagItemKey(tagId, item.getItemId()));
-            } catch (NotFoundException e) {
-                resourceExists = false;
-            }
-            if (resourceExists) {
-                asyncResponse.complete(Response.status(Response.Status.CONFLICT).build());
-                return;
-            }
+            CompletableFuture<ItemDTO> itemDTO = priceUpdaterClient
+                    .getItem(item.getItemId(), false, uniqueRequestId, executor).toCompletableFuture();
 
-            try {
-                // Try to retrieve response from price updater and check its status
-                Response updaterResponse = updaterRequest.get();
-                switch (updaterResponse.getStatus()) {
-                    // If status is OK, try to add item to collection
-                    case 200 -> {
-                        try {
-                            tagItemEntityBean.createTagItemEntity(tagId, item.getItemId());
-                        } catch (NotFoundException e) {
-                            asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
-                            return;
-                        } catch (RuntimeException e) {
-                            asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-                            return;
-                        }
-                        asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
-                    }
-                    // If status is NOT FOUND, return this status
-                    case 404 -> asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
-                    // If status is something else, return generic error
-                    default -> {
-                        log.error("createCollectionItem(item, collectionId): unexpected response from price-updater.");
+            executor.execute(() -> {
+                try {
+                    // Get HTTP response and complete database operations
+                    ItemDTO ignored = itemDTO.get();
+                    tagItemEntityBean.createTagItemEntity(tagId, item.getItemId());
+                    asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
+
+                } catch (NotFoundException e) {
+                    // If tagItemEntityBean cannot find tag
+                    asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+
+                } catch (RuntimeException e) {
+                    // If tagItemEntityBean cannot persist entity
+                    asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                } catch (ExecutionException e) {
+
+                    if (e.getCause() instanceof NotFoundException) // If price-updater cannot find item
+                        asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+
+                    else if (e.getCause() instanceof WebApplicationException) {
+                        // If HTTP request returned unusual status
+                        log.error("createTagItem(item, tagId): " +
+                                "unexpected response from price-updater.", e.getCause());
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                    } else if (e.getCause() instanceof ProcessingException) {
+                        // If fallback mechanism triggered
+                        log.error("createTagItem(item, tagId): " +
+                                "fallback triggered when querying price-updater.", e.getCause());
+                        asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+
+                    } else {
+                        // Something else happened
+                        log.error("createTagItem(item, tagId): unexpected HTTP client exception.", e.getCause());
                         asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
                     }
+
+                } catch (InterruptedException e) {
+                    // Thread was interrupted
+                    log.error("createTagItem(item, tagId): unexpected HTTP client exception.", e);
+                    asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
                 }
-            } catch(Exception e) {
-                // In case response cannot be retrieved, return generic error
-                log.error("createCollectionItem(item, collectionId): could not get response from price-updater.", e);
+            });
+
+        } else {
+            // Just persist collection item
+            try {
+                tagItemEntityBean.createTagItemEntity(tagId, item.getItemId());
+                asyncResponse.complete(Response.status(Response.Status.NO_CONTENT).build());
+            } catch (NotFoundException e) {
+                asyncResponse.complete(Response.status(Response.Status.NOT_FOUND).build());
+            } catch (RuntimeException e) {
                 asyncResponse.complete(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
             }
 
-        });
+        }
 
         return asyncResponse;
     }

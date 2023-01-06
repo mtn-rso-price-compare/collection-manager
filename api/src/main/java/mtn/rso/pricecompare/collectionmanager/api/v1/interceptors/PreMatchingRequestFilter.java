@@ -1,6 +1,7 @@
 package mtn.rso.pricecompare.collectionmanager.api.v1.interceptors;
 
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.core.util.UuidUtil;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -19,6 +20,8 @@ public class PreMatchingRequestFilter implements ContainerRequestFilter {
         MultivaluedMap<String, String> headers = ctx.getHeaders();
         if(headers.containsKey("uniqueRequestId"))
             ThreadContext.put("uniqueRequestId", headers.getFirst("uniqueRequestId"));
+        else
+            ThreadContext.put("uniqueRequestId", UuidUtil.getTimeBasedUuid().toString());
 
     }
 }

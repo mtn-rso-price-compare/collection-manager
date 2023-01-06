@@ -63,7 +63,7 @@ public class TagItemEntityBean {
         tagItemEntity.setTagId(tagId);
         tagItemEntity.setItemId(itemId);
 
-        TagEntity tagEntity = em.find(TagEntity.class, tagItemEntity.getItemId());
+        TagEntity tagEntity = em.find(TagEntity.class, tagId);
         if (tagEntity == null) {
             log.debug("createTagItemEntity(tagId, itemId): did not create entity due to missing relations.");
             throw new NotFoundException();

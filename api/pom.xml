@@ -54,6 +54,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.kumuluz.ee.fault.tolerance</groupId>
+            <artifactId>kumuluzee-fault-tolerance-smallrye</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>mtn.rso.pricecompare</groupId>
             <artifactId>collection-manager-services</artifactId>
         </dependency>

@@ -22,6 +22,9 @@ kumuluzee:
     ui:
       enabled: true
       mapping: /openapi/ui
+      server-auto-config:
+        enabled: true
+        original-uri-check: true
   config:
     consul:
       agent: http://host.docker.internal:8500
@@ -71,5 +74,4 @@ api-properties:
   return-collection-item-information: true
 
 client-properties:
-  price-updater-host: host.docker.internal
-  price-updater-port: 8080
+  price-updater-host: host.docker.internal:8080

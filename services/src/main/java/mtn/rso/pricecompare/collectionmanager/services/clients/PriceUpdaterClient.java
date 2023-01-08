@@ -1,7 +1,5 @@
 package mtn.rso.pricecompare.collectionmanager.services.clients;
 
-import com.kumuluz.ee.logs.LogManager;
-import com.kumuluz.ee.logs.Logger;
 import mtn.rso.pricecompare.collectionmanager.lib.ItemDTO;
 import mtn.rso.pricecompare.collectionmanager.services.config.ClientProperties;
 import org.apache.logging.log4j.ThreadContext;
@@ -10,14 +8,12 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Timeout;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
-import javax.annotation.processing.Completion;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.Response;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 import java.util.concurrent.*;
 
 @ApplicationScoped
@@ -29,8 +25,7 @@ public class PriceUpdaterClient {
     private WebTarget getBaseWebTarget() {
 
         return ClientBuilder.newClient()
-                .target("http://" + clientProperties.getPriceUpdaterHost() +
-                        ":" + clientProperties.getPriceUpdaterPort() + "/");
+                .target("http://" + clientProperties.getPriceUpdaterHost() + "/");
     }
 
     private Invocation.Builder getItemRequest(Integer itemId, Boolean returnPrice, String requestId) {

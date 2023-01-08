@@ -12,9 +12,6 @@ public class ClientProperties {
     @ConfigValue(watch = true)
     private String priceUpdaterHost;
 
-    @ConfigValue(watch = true)
-    private Integer priceUpdaterPort;
-
     public String getPriceUpdaterHost() {
         return priceUpdaterHost;
     }
@@ -23,11 +20,4 @@ public class ClientProperties {
         this.priceUpdaterHost = priceUpdaterHost;
     }
 
-    public Integer getPriceUpdaterPort() {
-        return priceUpdaterPort;
-    }
-
-    public void setPriceUpdaterPort(Integer priceUpdaterPort) {
-        this.priceUpdaterPort = priceUpdaterPort;
-    }
 }

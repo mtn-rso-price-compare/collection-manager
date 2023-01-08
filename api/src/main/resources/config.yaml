@@ -12,7 +12,8 @@ kumuluzee:
       connection-url: jdbc:postgresql://host.docker.internal:5433/collection-manager
       username: dbuser
       password: postgres
-      max-pool-size: 20
+      pool:
+        max-size: 1
   dev:
     scan-libraries:
       - collection-manager-lib
@@ -47,7 +48,7 @@ kumuluzee:
                                 <Console name="console" target="SYSTEM_OUT">
                                     <PatternLayout pattern="%d %p %marker %m %X %ex %n"/>
                                 </Console>
-                                <Socket name="logstash" host="3a68956d-0567-4cd2-8ad3-bfda5f432292-ls.logit.io" port="23732" protocol="udp">
+                                <Socket name="logstash" host="ba28be7a-3aac-4a7d-8f38-685d9044b466-ls.logit.io" port="19730" protocol="udp">
                                     <JSONLayout complete="false" compact="true" eventEol="true" charset="UTF-8" properties="true"/>
                                 </Socket>
                             </Appenders>

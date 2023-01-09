@@ -50,8 +50,7 @@ public class PriceUpdaterClient {
         return asyncResponse;
     }
 
-    @CircuitBreaker(requestVolumeThreshold = 3, delay = 30, delayUnit  = ChronoUnit.SECONDS)
-    @Timeout(value = 5, unit = ChronoUnit.SECONDS)
+    @CircuitBreaker(requestVolumeThreshold = 3, delay = 60, delayUnit  = ChronoUnit.SECONDS)
     @Fallback(fallbackMethod = "getItemFallback")
     public void getItemCallback(Invocation.Builder request,  CompletableFuture<ItemDTO> asyncResponse) {
         Response response = request.get();

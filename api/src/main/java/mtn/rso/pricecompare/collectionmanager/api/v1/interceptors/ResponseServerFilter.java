@@ -17,5 +17,10 @@ public class ResponseServerFilter implements ContainerResponseFilter {
 
         if(ThreadContext.containsKey("uniqueRequestId"))
             ThreadContext.remove("uniqueRequestId");
+
+        responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
+        responseContext.getHeaders().add("Access-Control-Allow-Methods", "*");
+        responseContext.getHeaders().add("Access-Control-Allow-Headers", "*");
+
     }
 }
